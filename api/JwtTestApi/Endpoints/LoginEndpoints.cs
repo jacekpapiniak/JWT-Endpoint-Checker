@@ -1,22 +1,30 @@
-﻿namespace JwtTestApi.Endpoints;
+﻿using JwtTestApi.Models;
+using JwtTestApi.Common;
+using JwtTestApi.Services;
+
+namespace JwtTestApi.Endpoints;
 
 public static class LoginEndpoints
 {
     public static IEndpointRouteBuilder MapLoginEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/login", (LoginRequest request) =>
+        app.MapPost("/login", (LoginRequest request, JwtTokenService jwtService) =>
         {
-            // In a real application, you would validate the user's credentials here
-            if (request.Username == "testuser" && request.Password == "password")
+            return request switch
             {
-                // Generate a JWT token (this is just a placeholder)
-                var token = "fake-jwt-token";
-                return Results.Ok(new { Token = token });
-            }
-            else
-            {
-                return Results.Unauthorized();
-            }
+                { Email: Email.ValidUser, Password: Email.TestPassword }
+                    => Results.Ok(jwtService.GenerateToken(request.Email)),
+                
+                { Email: Email.MalformedUser, Password: Email.TestPassword }
+                    => Results.Ok(jwtService.GenerateToken(request.Email)),
+                
+                { Email: Email.MisconfiguredUser, Password: Email.TestPassword }
+                    => Results.Ok(jwtService.GenerateToken(request.Email)),
+                
+                { Email: Email.InvalidUser, Password: Email.TestPassword }
+                    => Results.Ok(jwtService.GenerateToken(request.Email)),
+                _ => Results.Unauthorized()
+            };
         });
 
         return app;
