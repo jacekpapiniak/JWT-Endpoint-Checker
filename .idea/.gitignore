@@ -1,0 +1,111 @@
+﻿# Default ignored files
+/shelf/
+/workspace.xml
+# Rider ignored files
+/modules.xml
+/contentModel.xml
+/.idea.JWT-Endpoint-Checker.iml
+/projectSettingsUpdater.xml
+# Ignored default folder with query files
+/queries/
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+# Editor-based HTTP Client requests
+/httpRequests/
+
+# =========================
+# OS / system files
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# JetBrains / Rider / IDE
+# =========================
+.idea/
+*.sln.iml
+
+# VS Code
+.vscode/
+
+# Visual Studio
+.vs/
+
+# =========================
+# .NET build output
+# =========================
+**/bin/
+**/obj/
+
+# User-specific files
+*.user
+*.rsuser
+*.suo
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+
+# Test / coverage
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# Logs
+*.log
+
+# =========================
+# ASP.NET / local settings
+# =========================
+**/appsettings.Local.json
+**/appsettings.*.local.json
+
+# Optional: if you ever add secrets
+**/secrets.json
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python packaging / build
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# pytest / mypy / cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# =========================
+# Project-specific generated outputs
+# =========================
+checker/reports/*
+!checker/reports/.gitkeep
+
+checker/tests/sample_outputs/*
+!checker/tests/sample_outputs/.gitkeep
+
+# Optional local notes/temp files
+*.tmp
+*.temp
