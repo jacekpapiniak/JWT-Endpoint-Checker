@@ -1,5 +1,5 @@
 ﻿# This script file is used to spin up the test .NET API server that is used for testing this CLI tool.
-
+import json # Used to write the PID of the API server process to a file, so we can stop it later (similar to how we would use a file to store the PID in a shell script).
 import subprocess # Used to run the .NET API server as a subprocess (dotnet run).
 import pathlib # Used to manipulate file paths in a cross-platform way (System.IO.Path in C#).
 import sys # Used to get the current working directory (System.Environment.CurrentDirectory in C#).
@@ -81,9 +81,35 @@ def run_api_server(api_project_path):
             print("\nAvailable endpoints:")
             print(f"{base_url}/api/login")
             print(f"{base_url}/api/profile\n")
+
+            # To stop the server we need to save PID of the process and use it to terminate the process later.
+            print(f"To stop the API server, use the following command in your terminal:")
+            print(f"kill {server_process.pid} # On Unix/Linux/Mac")
+            print(f"taskkill /PID {server_process.pid} /F # On Windows")
+
+            pid_data = {
+                "pid": server_process.pid
+            }
+
+            # Path to the file where we will save the PID of the server process, so we can stop it later.
+            # We will save it in the same folder as the .csproj file, with the name PID.json.
+            pid_file = pathlib.Path(f"{str(api_project_path.parent)}/PID.json")
+
+            #Write the PID data to the file in JSON format, with indentation for readability.
+            with open(pid_file, "w") as f:
+                json.dump(pid_data, f, indent=4)
             break
-        else:
-            print(line, end="") # Print the output from the server process to the console.
+
+
+def run_local_api_server():
+    server_path = find_api_server()
+    run_api_server(server_path)
+
+def stop_api_server():
+    root_path = find_repo_root()
+    if root_path is None:
+        print("Cannot find API server because repository root could not be found.")
+        return None
 
 def main():
     server_path = find_api_server()
