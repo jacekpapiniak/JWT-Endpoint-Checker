@@ -45,5 +45,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.MapControllers();
 app.MapGroup("/api")
-   .MapLoginEndpoints();
+   .MapLoginEndpoints()
+   .MapProfileEndpoints();
 app.Run();

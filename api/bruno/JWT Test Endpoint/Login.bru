@@ -17,6 +17,16 @@ body:json {
   }
 }
 
+script:post-response {
+  const body = res.getBody();
+  
+  // JSON jwtToken
+  const token = body.jwtToken;
+  
+  // set the token env variable
+  bru.setEnvVar("token", token);
+}
+
 settings {
   encodeUrl: true
   timeout: 0
