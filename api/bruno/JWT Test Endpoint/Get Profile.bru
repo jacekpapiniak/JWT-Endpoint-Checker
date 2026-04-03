@@ -1,0 +1,22 @@
+meta {
+  name: Get Profile
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:5250/api/profile
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "Token" : "{{token}}"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

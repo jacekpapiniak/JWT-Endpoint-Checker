@@ -18,9 +18,12 @@ public class JwtTokenService
     public JwtTokenService(IConfiguration config)
     {
         _config = config;
-        _secretKey = _config["Jwt:SecretKey"];
-        _issuer = _config["Jwt:Issuer"];
-         _audience = _config["Jwt:Audience"];
+        
+        // To configure JWT token we need to set the secret key, issuer and audience. We read these values from the configuration.
+        // In case any of these values are missing, then we throw an exception to inform what is missing to help troubleshooting.
+        _secretKey = _config["Jwt:SecretKey"] ?? throw new InvalidOperationException("Jwt:SecretKey missing");
+        _issuer = _config["Jwt:Issuer"] ?? throw new InvalidOperationException("Jwt:Issuer missing");
+        _audience = _config["Jwt:Audience"] ?? throw new InvalidOperationException("Jwt:Audience missing");
     }
 
     public LoginResponse GenerateToken(string email)
@@ -33,6 +36,48 @@ public class JwtTokenService
             Email.InvalidUser => new LoginResponse("Not a Jwt Token"),
             _ => new LoginResponse(string.Empty)
         };
+    }
+
+    public async Task<TokenValidationResult> IsValidToken(string? token)
+    {
+        //1 Validate if the provided token is not null or empty
+        if (string.IsNullOrEmpty(token))
+        {
+            return new TokenValidationResult()
+            {
+                IsValid = false,
+                Exception = new SecurityTokenException("Token is null or empty")
+            };
+        }
+        
+        var tokenHandler = new JwtSecurityTokenHandler();
+        
+        //2 Validate if the provided token is well formatted JWT Token
+        if (!tokenHandler.CanReadToken(token))
+        {
+            return new TokenValidationResult()
+            {
+                IsValid = false,
+                Exception = new SecurityTokenException("Token is not in a valid JWT format")
+            };
+        }
+        
+        //3 Validate JWT Token
+        var validationResult = await tokenHandler.ValidateTokenAsync(token, new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true, // This makes sure that token expiry time is validated
+            ValidIssuer = _issuer,
+            ValidAudience = _audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey)),
+            ClockSkew = TimeSpan.Zero, // This check the lifespan of the token, we set it to zero to make sure that the token is valid only for the exact time specified in the token and not a few minutes more (which is the default behavior)
+            RequireExpirationTime = true, // This ensures that the token must have an expiration time, if not it will be rejected
+            RequireSignedTokens = true
+        });
+        
+        return validationResult;
     }
 
     private LoginResponse CreateMalformedTokenResponse(string email)
@@ -50,7 +95,7 @@ public class JwtTokenService
         return new LoginResponse(corruptedToken);
     }
 
-    public string CreateToken(string subject, int expiresInMinutes)
+    private string CreateToken(string subject, int expiresInMinutes)
     {
         Claim[] claims =
         [
