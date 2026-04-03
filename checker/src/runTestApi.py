@@ -55,8 +55,35 @@ def run_api_server(api_project_path):
         return
 
     # Run the .NET API server using the dotnet CLI. This will block until the server is stopped.
+    # str(api_project_path) is needed because subprocess.run expects a string, and api_project_path is a pathlib.Path object.
+    # this way it converts the pathlib.Path to a string that can be used in the command line.
     print(f"Running API server from project path: {api_project_path}")
-    subprocess.run(["dotnet", "run", "--project", str(api_project_path)])
+
+    server_process = subprocess.Popen(
+    ["dotnet", "run", "--project", str(api_project_path)],
+    stdout=subprocess.PIPE, # Redirect the standard output to a pipe, so we can read it in Python.
+    stderr=subprocess.PIPE, # Redirect the standard error to a pipe, so we can read it in Python.
+    text=True,
+    creationflags=subprocess.CREATE_NEW_CONSOLE) # text=True is needed to get the output as a string instead of bytes.
+
+    print("\n\nAPI server process started. Waiting for it to be ready...\n\n")
+    # Read the output from the server process and print it to the console.
+    # We will look for the line that contains "Now listening on: " to get the base URL of the server.
+    for line in server_process.stdout:
+
+        # Get first line with "Now listening on: " to get the base URL of the server.
+        # We also need this to see on what port the server is running (if not configured in the appsettings.json file).
+        if "Now listening on:" in line:
+            base_url = line.split("Now listening on: ")[1].strip() # Get the base URL from the line.
+            print("=== API READY ===")
+            print(f"Base URL: {base_url}")
+
+            print("\nAvailable endpoints:")
+            print(f"{base_url}/api/login")
+            print(f"{base_url}/api/profile\n")
+            break
+        else:
+            print(line, end="") # Print the output from the server process to the console.
 
 def main():
     server_path = find_api_server()
