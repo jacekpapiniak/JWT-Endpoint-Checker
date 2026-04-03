@@ -29,7 +29,7 @@ public class JwtTokenService
         {
             Email.ValidUser => new LoginResponse(CreateToken(email, 10)),
             Email.MalformedUser => CreateMalformedTokenResponse(Email.MalformedUser),
-            Email.MisconfiguredUser => new LoginResponse(CreateToken(email, 365 * 24 * 60)), // Expires in 1 year
+            Email.MisconfiguredUser => new LoginResponse(CreateToken(email, int.MaxValue)),
             Email.InvalidUser => new LoginResponse("Not a Jwt Token"),
             _ => new LoginResponse(string.Empty)
         };
