@@ -1,8 +1,7 @@
 ﻿# This is validating the input parameters.
 # For example if user provided -t/--token argument, that is an URL,
 # Then we need to check if -c/--credentials argument is provided, because it is required to obtain the token from the endpoint.
-
-from cli import build_cli # Import the argparse parser
+from email import parser
 from pathlib import Path # Import Path for file path validation
 
 # Function that takes the token value
