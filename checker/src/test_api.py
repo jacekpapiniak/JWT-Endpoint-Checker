@@ -87,6 +87,8 @@ def run_api_server(api_project_path):
             print(f"kill {server_process.pid} # On Unix/Linux/Mac")
             print(f"taskkill /PID {server_process.pid} /F # On Windows")
 
+            # Save the PID of the server process to a file in the json format.
+            # This creates an object with a single property "pid" that contains the PID of the server process.
             pid_data = {
                 "pid": server_process.pid
             }
@@ -106,10 +108,58 @@ def run_local_api_server():
     run_api_server(server_path)
 
 def stop_api_server():
-    root_path = find_repo_root()
-    if root_path is None:
+    # The PID.json file is being written in the same folder as the JwtTestApi.csproj
+    # Therefore we need to find the path to that file first.
+    server_path = find_api_server()
+    if server_path is None:
         print("Cannot find API server because repository root could not be found.")
-        return None
+
+    # Once we have a path to the API csproj file,
+    # We can search for the PID.json file in the same folder
+    server_root = server_path.parent
+    print("Finding PID.json file...")
+    print(f"Searching for PID.json file in the folder: {str(server_root)}")
+    if server_root.is_dir():
+        print(f"Found directory: {str(server_root)}")
+    else:
+        print(f"Directory does not exist: {str(server_root)}")
+
+    # Search for the PID.json file and get the first match (there should only be one).
+    pid_file_path = next(pathlib.Path(str(server_root)).rglob("PID.json"), None)
+    if pid_file_path is None:
+        print("Could not find PID.json file in the repository.")
+
+    # Verify if the PID.json file exists at the specified path.
+    if not pid_file_path.is_file():
+        print(f"The specified PID.json file does not exist: {pid_file_path}")
+        return
+
+    # Open the PID.json file and read the file content.
+    with open(str(pid_file_path), "r") as pid_file:
+
+        # Load the PID data from the file in json format.
+        # We know that struccure of the file is like this:
+        # {
+        #     "pid": 12345
+        # }
+        pid_data = json.load(pid_file)
+        pid = pid_data.get("pid") # Read the PID property from the JSON data.
+        if pid is None:
+            print("PID not found in PID.json file.")
+            return
+
+        print(f"Stopping API server with PID: {pid}")
+        try:
+            # On Unix/Linux/Mac, we can use os.kill to send a SIGTERM signal to the process.
+            # On Windows, we can use subprocess.run to execute the taskkill command.
+            if sys.platform.startswith("win"):
+                subprocess.run(["taskkill", "/PID", str(pid), "/F"], check=True)
+            else:
+                import os
+                os.kill(pid, 15) # 15 is the signal number for SIGTERM
+            print("API server stopped successfully.")
+        except Exception as e:
+            print(f"Error stopping API server: {e}")
 
 def main():
     server_path = find_api_server()
