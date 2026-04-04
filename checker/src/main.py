@@ -1,15 +1,21 @@
 ﻿from cli import build_cli # Import the argpars
+from parser_validator import validate_arguments # Import the function to validate command line arguments
 from test_api import run_local_api_server, stop_api_server # Import the function to run the local API server
 
 def main():
     cli_parser = build_cli()
+
+    # Read the command line arguments
     args = cli_parser.parse_args()
+
+    # Validate the command line arguments
+    validate_arguments(cli_parser, args)
 
     if args.api_start:
         run_local_api_server()
         return
 
-    if args.api_stop:
+    if args.api_kill:
         print("Stopping API server...")
         # We need to stop the API server that we started with the --api-start flag.
         # However, since the API server is started in a separate process,

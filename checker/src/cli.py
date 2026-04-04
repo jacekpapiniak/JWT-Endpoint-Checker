@@ -3,7 +3,6 @@
 # For argparse documentation visit: https://docs.python.org/3/library/argparse.html
 
 import argparse
-from typing import Required
 
 def build_cli():
     parser = argparse.ArgumentParser(
@@ -30,15 +29,20 @@ def build_cli():
     )
 
     # Add arguments for the CLI
-    parser.add_argument(
-        "-strt", "--api-start",
+    ## API server control arguments
+    # This creates a mutually exclusive group, which means that only one of the arguments in this group can be provided at a time.
+    # This is useful for the --api-start and --api-stop flags, because it doesn't make sense to start and stop the API server at the same time.
+    api_group = parser.add_mutually_exclusive_group()
+
+    api_group.add_argument(
+        "-s", "--api-start",
         action="store_true", # This means that if the flag is present, the value will be True, otherwise it will be False. This is useful for flags that don't require a value, like --api-start.
         help="Start local API"
     )
 
     # Add arguments for the CLI
-    parser.add_argument(
-        "-stp", "--api-stop",
+    api_group.add_argument(
+        "-k", "--api-kill",
         action="store_true", # This means that if the flag is present, the value will be True, otherwise it will be False. This is useful for flags that don't require a value, like --api-start.
         help="Stop local API"
     )
@@ -48,7 +52,8 @@ def build_cli():
         action="store_true",
         help="Enable verbose output for debugging purposes"
     )
-    
+
+    ## Checker arguments
     # This sections arguments are related to the JWT token input.
     parser.add_argument(
         "-t", "--token",
