@@ -26,3 +26,7 @@ To run the test .NET API Server, follow these steps:
 
 Note that server will start and create PID.json file in the same directory, which contains the process ID of the running server. 
 This file is then used by `python checker/src/main.py -k` to kill server process.
+
+# Unit Tests
+This project includes unit tests for python code. To run the tests, navigate to the `checker/tests/` directory 
+and execute the following command: `pytest -v`

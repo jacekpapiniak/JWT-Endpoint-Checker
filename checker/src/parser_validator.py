@@ -1,8 +1,16 @@
 ﻿# This is validating the input parameters.
 # For example if user provided -t/--token argument, that is an URL,
 # Then we need to check if -c/--credentials argument is provided, because it is required to obtain the token from the endpoint.
-from email import parser
+
 from pathlib import Path # Import Path for file path validation
+
+def is_file_path(value: str) -> bool:
+    # Check if the value might be a file path by looking for common file path indicators like ".txt" or "/".
+    is_path = (value is not None
+            and value != ""
+            and (".txt" in value or "\\" in value))
+
+    return is_path
 
 # Function that takes the token value
 # Then it analyse it and returns if it is
@@ -13,8 +21,20 @@ def get_token_type(token_value: str) -> str:
         return "url"
 
     # Check if the token value is a valid file path
-    if Path(token_value).is_file():
-        return "file"
+    if is_file_path(token_value):
+        #If the given token value looks like a file path, we need to check if the file actually exists.
+        if(Path(token_value).is_file()):
+
+            #if file exists, read content
+            with open(token_value, 'r') as file:
+                content = file.read().strip() #strip() to remove any leading/trailing whitespace characters that might interfere with our URL check
+                #if file content looks like URL, return "url", otherwise return "file"
+                if content.startswith("http://") or content.startswith("https://"):
+                    return "url"
+                else:
+                    return "file"
+        else:
+            return "file"
 
     # If it's neither a valid URL nor a valid file path, treat it as a raw string
     return "string"
@@ -82,9 +102,7 @@ def validate_arguments(parser, args) -> None:
          Please provide a valid file path or check the file permissions.''')
 
   # 6. If credentials is a file path, check if the file exists.
-  if args.credentials and (get_token_type(args.credentials) == "file"):
-     credentials_path = Path(args.credentials)
-     if not credentials_path.is_file():
+  if args.credentials and (get_token_type(args.credentials) == "file") and not Path(args.credentials).is_file():
         parser.error(f'''\
         The file specified in the -c/--credentials argument does not exist: {args.credentials}
         Please provide a valid file path or check the file permissions.''')
