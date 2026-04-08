@@ -1,4 +1,4 @@
-﻿# This is validating the input parameters.
+# This is validating the input parameters.
 # For example if user provided -t/--token argument, that is an URL,
 # Then we need to check if -c/--credentials argument is provided, because it is required to obtain the token from the endpoint.
 

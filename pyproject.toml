@@ -1,0 +1,29 @@
+# This file is used to configure the build system and dependencies for the project.
+# It specifies the project name, version, and any scripts that can be run.
+# Thanks to these settings we can install the package and run the CLI tool using the command `checker`.
+
+# Build system tells Python how to build the project and what dependencies are needed for the build process.
+[build-system]
+requires = ["setuptools>=61.0"] # This specifies that we need at least version 61.0 of setuptools to build the project.
+build-backend = "setuptools.build_meta" # This specifies that we want to use the setuptools build backend to build the project.
+
+# This section sets the metadata for the project, such as the name, version, description, and the required Python version.
+[project]
+
+# The name of the project is "checker" - this is the name that will be used when installing the package and running the CLI tool.
+# This is not the "checker" command itself, but the name of the package that contains the command.
+name = "checker"
+version = "0.1.0"
+description = "JWT Endpoint Checker CLI tool"
+readme = "README.md"
+requires-python = ">=3.10"
+
+# Which packages include during installation.
+[tool.setuptools.packages.find]
+include = ["checker*"]
+
+# This section defines the entry points for the project, which are the commands that can be run from the command line after installing the package.
+# This allows us to run CLI commands like "checker -some-arg" after installing the package.
+# Instead of running "python -m checker.src.main -some-arg", we can simply run "checker -some-arg" after installing the package.
+[project.scripts]
+checker = "checker.src.main:main"

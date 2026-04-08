@@ -1,6 +1,6 @@
-﻿from cli import build_cli # Import the argpars
-from checker.src.validators.parser_validator import validate_arguments # Import the function to validate command line arguments
-from test_api import run_local_api_server, stop_api_server # Import the function to run the local API server
+﻿from .cli import build_cli # Import the argpars
+from .validators.parser_validator import validate_arguments # Import the function to validate command line arguments
+from .test_api import run_local_api_server, stop_api_server # Import the function to run the local API server
 
 def main():
     cli_parser = build_cli()
