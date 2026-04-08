@@ -1,7 +1,7 @@
 ﻿import pytest
 
 from checker.src.cli import build_cli
-from checker.src.parser_validator import get_token_type, validate_arguments
+from checker.src.validators.parser_validator import get_token_type, validate_arguments
 
 
 # Test cases for get_token_type function
