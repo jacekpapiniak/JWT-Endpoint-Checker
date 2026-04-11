@@ -1,8 +1,6 @@
 ﻿import pytest
-
-from checker.src.cli import build_cli
+from checker.src.cli.cli import build_cli
 from checker.src.validators.parser_validator import get_token_type, validate_arguments
-
 
 # Test cases for get_token_type function
 # This pytest.mark.parametrize allows is an equivalent to C# [TestCase] attribute

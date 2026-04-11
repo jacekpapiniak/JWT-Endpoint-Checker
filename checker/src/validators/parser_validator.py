@@ -2,6 +2,7 @@
 # For example if user provided -t/--token argument, that is an URL,
 # Then we need to check if -c/--credentials argument is provided, because it is required to obtain the token from the endpoint.
 
+from checker.src.helpers.string_helper import is_url # Import the helper function to check if a string is a URL
 from pathlib import Path # Import Path for file path validation
 
 def is_file_path(value: str) -> bool:
@@ -17,7 +18,7 @@ def is_file_path(value: str) -> bool:
 # A raw string, a path to a file, or a URL.
 def get_token_type(token_value: str) -> str:
     # Check if the token value is a valid URL
-    if token_value.startswith("http://") or token_value.startswith("https://"):
+    if is_url(token_value):
         return "url"
 
     # Check if the token value is a valid file path
@@ -29,7 +30,7 @@ def get_token_type(token_value: str) -> str:
             with open(token_value, 'r') as file:
                 content = file.read().strip() #strip() to remove any leading/trailing whitespace characters that might interfere with our URL check
                 #if file content looks like URL, return "url", otherwise return "file"
-                if content.startswith("http://") or content.startswith("https://"):
+                if is_url(content):
                     return "url"
                 else:
                     return "file"
