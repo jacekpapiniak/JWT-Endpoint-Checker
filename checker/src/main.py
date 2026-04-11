@@ -24,6 +24,18 @@ def main():
         stop_api_server()
         return
 
+    if args.token:
+        print("Loading token...")
+        # The credentials are in format "email,password".
+        # Therefore we can use split(",") to get the email and password as separate values.
+        if args.credentials:
+            email, password = args.credentials.split(",")
+        else:
+            email, password = None, None
+
+        token = token_loader.load_token(args.token, email, password)
+        print(f"Token loaded successfully: {token}")
+
     print("No action specified. Use -h or --help for usage information.")
 
 if __name__ == "__main__":
