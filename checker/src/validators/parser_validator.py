@@ -1,7 +1,8 @@
-﻿# This is validating the input parameters.
+# This is validating the input parameters.
 # For example if user provided -t/--token argument, that is an URL,
 # Then we need to check if -c/--credentials argument is provided, because it is required to obtain the token from the endpoint.
 
+from checker.src.helpers.string_helper import is_url # Import the helper function to check if a string is a URL
 from pathlib import Path # Import Path for file path validation
 
 def is_file_path(value: str) -> bool:
@@ -17,22 +18,15 @@ def is_file_path(value: str) -> bool:
 # A raw string, a path to a file, or a URL.
 def get_token_type(token_value: str) -> str:
     # Check if the token value is a valid URL
-    if token_value.startswith("http://") or token_value.startswith("https://"):
+    if is_url(token_value):
+        print(f"The token value looks like a URL: {token_value}")
         return "url"
 
     # Check if the token value is a valid file path
     if is_file_path(token_value):
         #If the given token value looks like a file path, we need to check if the file actually exists.
         if(Path(token_value).is_file()):
-
-            #if file exists, read content
-            with open(token_value, 'r') as file:
-                content = file.read().strip() #strip() to remove any leading/trailing whitespace characters that might interfere with our URL check
-                #if file content looks like URL, return "url", otherwise return "file"
-                if content.startswith("http://") or content.startswith("https://"):
-                    return "url"
-                else:
-                    return "file"
+           return "file"
         else:
             return "file"
 
@@ -95,13 +89,24 @@ def validate_arguments(parser, args) -> None:
          "The login credentials -c/--credentials argument is required
          Example: checker -t \"http://localhost:5000/api/login\" -c \"email,password\" -w \"path\\report.txt\"''')
 
-  # 5. If token is a file path, check if the file exists.
+  # 5. If token is a file path, and files content is an url and no credentials given as part of args.
+  if args.token and (get_token_type(args.token) == "file") and Path(args.token).is_file():
+      file_content = Path(args.token).read_text().strip() # Read the content of the file and strip any leading/trailing whitespace characters
+      if is_url(file_content) and not args.credentials:
+          parser.error('''\
+
+             The -t/--token argument is a URL - to obtain the JWT token from an endpoint.
+             "The login credentials -c/--credentials argument is required
+             Example: checker -t \"http://localhost:5000/api/login\" -c \"email,password\" -w \"path\\report.txt\"''')
+
+  # 6. If token is a file path, check if the file exists.
   if args.token and (get_token_type(args.token) == "file") and not Path(args.token).is_file():
      parser.error(f'''\
          The file specified in the -t/--token argument does not exist: {args.token}
          Please provide a valid file path or check the file permissions.''')
 
-  # 6. If credentials is a file path, check if the file exists.
+
+  # 7. If credentials is a file path, check if the file exists.
   if args.credentials and (get_token_type(args.credentials) == "file") and not Path(args.credentials).is_file():
         parser.error(f'''\
         The file specified in the -c/--credentials argument does not exist: {args.credentials}
