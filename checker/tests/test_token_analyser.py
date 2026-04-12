@@ -57,7 +57,8 @@ def test_analyse_token_when_token_has_invalid_format_and_only_one_segment_return
         "sub" : None,
         "exp" : None,
         "is_expired": None,
-        "errors": expected_errors
+        "errors": expected_errors,
+        "warnings": []
     }
     actual = analyse_token(token, 1775997355)
 
@@ -84,13 +85,15 @@ def test_analyse_token_when_token_is_expired_returns_expected():
         "sub" : "valid@user.test.co.uk",
         "exp" : 1775907712, # 11th April 2026
         "is_expired": True,
-        "errors": ["The token is expired - Current time: 1775997355, Expiry time: 1775907712."]
+        "errors": ["The token is expired - Current time: 1775997355, Expiry time: 1775907712."],
+        "warnings": []
     }
 
     actual = analyse_token(expired_token, 1775997355)
 
     assert actual == expected
 
+#Test missing or empty sub claim
 @pytest.mark.parametrize("token, expected_payloads, expected_errors",
 [
     ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InZhbGlkQHVzZXIudGVzdC5jby51ayIsImp0aSI6IjA3Nzk5YWNjLTNlYmYtNGFlOS1iOWRkLTNjN2VjODA1NTI3MyIsImV4cCI6MTc3NTkwNzcxMiwiaXNzIjoiSnd0VGVzdEFwaSIsImF1ZCI6Ikp3dFRlc3RBcGlVc2VycyJ9.CDBc0uBuBbM_yBiyL8y7nZafmDcY8imJ_NAXr-bU1bE",
@@ -113,10 +116,13 @@ def test_analyse_token_when_token_is_expired_returns_expected():
          "aud": "JwtTestApiUsers"
      },
     ["Empty 'sub' claim in payload. The 'sub' claim identifies the subject of the token and is typically required for authentication and authorization."]),
-])
+],
+    ids=[
+        "missing_sub_claim",
+        "empty_sub_claim"
+    ])
 def test_analyse_token_when_token_has_missing_or_empty_sub_claim_returns_expected(token:str, expected_payloads: object, expected_errors: list):
     # This token is a valid JWT token but it is missing the alg claim in the header.
-    token_missing_alg = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InZhbGlkQHVzZXIudGVzdC5jby51ayIsImp0aSI6IjA3Nzk5YWNjLTNlYmYtNGFlOS1iOWRkLTNjN2VjODA1NTI3MyIsImV4cCI6MTc3NTkwNzcxMiwiaXNzIjoiSnd0VGVzdEFwaSIsImF1ZCI6Ikp3dFRlc3RBcGlVc2VycyJ9.CDBc0uBuBbM_yBiyL8y7nZafmDcY8imJ_NAXr-bU1bE"
     expected = {
         "token": token,
         "is_valid_format": True,
@@ -128,9 +134,95 @@ def test_analyse_token_when_token_has_missing_or_empty_sub_claim_returns_expecte
         "sub" : None,
         "exp" : 1775907712, # 11th April 2026
         "is_expired": False,
-        "errors": expected_errors
+        "errors": expected_errors,
+        "warnings": []
     }
 
     actual = analyse_token(token, 1775907712)
+
+    assert actual == expected
+
+# Test expiry
+@pytest.mark.parametrize("token, expected_payloads, expected_exp, is_expired, expected_errors, expected_warnings",
+[
+    ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ2YWxpZEB1c2VyLnRlc3QuY28udWsiLCJlbWFpbCI6InZhbGlkQHVzZXIudGVzdC5jby51ayIsImp0aSI6IjA3Nzk5YWNjLTNlYmYtNGFlOS1iOWRkLTNjN2VjODA1NTI3MyIsImlzcyI6Ikp3dFRlc3RBcGkiLCJhdWQiOiJKd3RUZXN0QXBpVXNlcnMifQ.eZwsUFmaLe4DGpeXmu4hSPue8QtrphlCNuFa0eOCcno",
+     {
+      "sub": "valid@user.test.co.uk",
+      "email": "valid@user.test.co.uk",
+      "jti": "07799acc-3ebf-4ae9-b9dd-3c7ec8055273",
+      "iss": "JwtTestApi",
+      "aud": "JwtTestApiUsers"
+    }, None, None,
+    ["Missing 'exp' claim in payload. The 'exp' claim specifies the expiration time of the token and is important for security to prevent accepting expired tokens."],[]),
+
+    ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ2YWxpZEB1c2VyLnRlc3QuY28udWsiLCJlbWFpbCI6InZhbGlkQHVzZXIudGVzdC5jby51ayIsImp0aSI6IjA3Nzk5YWNjLTNlYmYtNGFlOS1iOWRkLTNjN2VjODA1NTI3MyIsImV4cCI6IiIsImlzcyI6Ikp3dFRlc3RBcGkiLCJhdWQiOiJKd3RUZXN0QXBpVXNlcnMifQ.D5enpXTCkLRJrVW9z_Pj49et48wWZG-fXldhq49B2uw",
+     {
+      "exp": "",
+      "sub": "valid@user.test.co.uk",
+      "email": "valid@user.test.co.uk",
+      "jti": "07799acc-3ebf-4ae9-b9dd-3c7ec8055273",
+      "iss": "JwtTestApi",
+      "aud": "JwtTestApiUsers"
+     }, None, None,
+    ["Empty 'exp' claim in payload. The 'exp' claim should be an integer representing the Unix timestamp of the token's expiration time."],[]),
+
+    ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ2YWxpZEB1c2VyLnRlc3QuY28udWsiLCJlbWFpbCI6InZhbGlkQHVzZXIudGVzdC5jby51ayIsImp0aSI6IjA3Nzk5YWNjLTNlYmYtNGFlOS1iOWRkLTNjN2VjODA1NTI3MyIsImV4cCI6ImRlZmluYXRlbHkgbm90IGludGVnZXIiLCJpc3MiOiJKd3RUZXN0QXBpIiwiYXVkIjoiSnd0VGVzdEFwaVVzZXJzIn0.ipyoR_xj6SG543yG3tbeDSGb8s7QYS_wZZWC_jGxFCQ",
+     {
+         "exp": "definately not integer",
+         "sub": "valid@user.test.co.uk",
+         "email": "valid@user.test.co.uk",
+         "jti": "07799acc-3ebf-4ae9-b9dd-3c7ec8055273",
+         "iss": "JwtTestApi",
+         "aud": "JwtTestApiUsers"
+     }, None, None,
+    ["Invalid 'exp' claim in payload. The 'exp' claim should be an integer representing the Unix timestamp of the token's expiration time."], []),
+
+    ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ2YWxpZEB1c2VyLnRlc3QuY28udWsiLCJlbWFpbCI6InZhbGlkQHVzZXIudGVzdC5jby51ayIsImp0aSI6IjA3Nzk5YWNjLTNlYmYtNGFlOS1iOWRkLTNjN2VjODA1NTI3MyIsImV4cCI6MTc3NTkwNzcxMiwiaXNzIjoiSnd0VGVzdEFwaSIsImF1ZCI6Ikp3dFRlc3RBcGlVc2VycyJ9.LKodA7Hw5W32FcPzrTDGNXPQpLHVMe_hNieXBwI8ZD4",
+     {
+         "exp": 1775907712, # 11th April 2026
+         "sub": "valid@user.test.co.uk",
+         "email": "valid@user.test.co.uk",
+         "jti": "07799acc-3ebf-4ae9-b9dd-3c7ec8055273",
+         "iss": "JwtTestApi",
+         "aud": "JwtTestApiUsers"
+     }, 1775907712, True,
+    ["The token is expired - Current time: 1775997355, Expiry time: 1775907712."], []),
+
+    ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ2YWxpZEB1c2VyLnRlc3QuY28udWsiLCJlbWFpbCI6InZhbGlkQHVzZXIudGVzdC5jby51ayIsImp0aSI6IjA3Nzk5YWNjLTNlYmYtNGFlOS1iOWRkLTNjN2VjODA1NTI3MyIsImV4cCI6MzMzNjQ0NDIyMDIsImlzcyI6Ikp3dFRlc3RBcGkiLCJhdWQiOiJKd3RUZXN0QXBpVXNlcnMifQ.VZjEbo3jpXHXeAQBwrJMXoYFfAewj47GroFKBNLf79A",
+     {
+         "exp": 33364442202, # 11th April 2026
+         "sub": "valid@user.test.co.uk",
+         "email": "valid@user.test.co.uk",
+         "jti": "07799acc-3ebf-4ae9-b9dd-3c7ec8055273",
+         "iss": "JwtTestApi",
+         "aud": "JwtTestApiUsers"
+     }, 33364442202, False,
+    [], ["The token has a long expiry time and expires in 31588444847 s - Current time: 1775997355, Expiry time: 33364442202. Consider setting a shorter expiry time for better security."]),
+],
+ ids=[
+     "missing_exp_claim",
+     "empty_exp_claim",
+     "non_integer_exp_claim",
+     "expired_exp_claim",
+     "too_far_in_future_exp_claim"
+ ])
+def test_analyse_token_when_token_has_missing_or_empty_exp_claim_returns_expected(token:str, expected_payloads: object, expected_exp:int, is_expired:bool, expected_errors: list, expected_warnings: list):
+    # This token is a valid JWT token but it is missing the alg claim in the header.
+    expected = {
+        "token": token,
+        "is_valid_format": True,
+        "segment_count": 3,
+        "header": {"alg": "HS256", "typ": "JWT"},
+        "payload": expected_payloads,
+        "signature": None,
+        "alg" : "HS256",
+        "sub" : "valid@user.test.co.uk",
+        "exp" : expected_exp,
+        "is_expired": is_expired,
+        "errors": expected_errors,
+        "warnings": expected_warnings
+    }
+
+    actual = analyse_token(token, 1775997355)
 
     assert actual == expected

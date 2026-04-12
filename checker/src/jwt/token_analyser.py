@@ -79,6 +79,11 @@ def validate_expiry(payload: dict, result: TokenAnalysisResult, current_time_tim
         result["errors"].append("Missing 'exp' claim in payload. The 'exp' claim specifies the expiration time of the token and is important for security to prevent accepting expired tokens.")
         return result
 
+    # Check if the "exp" claim is empty string.
+    if expiry_time == "":
+        result["errors"].append("Empty 'exp' claim in payload. The 'exp' claim should be an integer representing the Unix timestamp of the token's expiration time.")
+        return result
+
     # Check if the "exp" claim is an valid integer representing the Unix timestamp of the token's expiration time.
     if not isinstance(expiry_time,int):
         result["errors"].append("Invalid 'exp' claim in payload. The 'exp' claim should be an integer representing the Unix timestamp of the token's expiration time.")
@@ -90,6 +95,14 @@ def validate_expiry(payload: dict, result: TokenAnalysisResult, current_time_tim
     result["is_expired"] = is_expired # Compare the current time with the expiry time to determine if the token is expired
     if is_expired:
         result["errors"].append(f"The token is expired - Current time: {current_time_timestamp}, Expiry time: {expiry_time}.")
+
+    # If it is not expired check if its expiry time is not too far in the future,
+    # That can also be a sign of misconfiguration (e.g. tokens that never expire or have very long expiry times can be a security risk if they are leaked).
+    # Sometimes expiry times are set to 24hrs or even 7 days, which can be a security risk if the token is leaked, as it would allow an attacker to use the token for a long time.
+    # Add a warning if the expiry time is more than 24 hours (86400 seconds) in the future.
+    expires_in_seconds = expiry_time - current_time_timestamp
+    if expiry_time - current_time_timestamp > 86400:
+        result["warnings"].append(f"The token has a long expiry time and expires in {expires_in_seconds} s - Current time: {current_time_timestamp}, Expiry time: {expiry_time}. Consider setting a shorter expiry time for better security.")
 
     return result
 
@@ -110,7 +123,8 @@ def analyse_token(token: str, current_time_timestamp: int) -> TokenAnalysisResul
         "sub" : None,
         "exp" : None,
         "is_expired": None,
-        "errors": []
+        "errors": [],
+        "warnings": []
     }
 
     # Split the token into its three parts: header, payload, and signature

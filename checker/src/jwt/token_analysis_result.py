@@ -14,3 +14,4 @@ class TokenAnalysisResult(TypedDict):
     exp: int | None
     is_expired: bool | None
     errors: list[str]
+    warnings: list[str]
