@@ -1,6 +1,7 @@
 ﻿import pytest
 import base64
 import json
+from datetime import datetime, timezone # for converting the exp claim to a human-readable format
 from checker.src.jwt.token_analyser import decode_base64, analyse_token
 
 # Test cases values for decode_base64 function
@@ -206,7 +207,7 @@ def test_analyse_token_when_token_has_missing_or_empty_sub_claim_returns_expecte
      "expired_exp_claim",
      "too_far_in_future_exp_claim"
  ])
-def test_analyse_token_when_token_has_missing_or_empty_exp_claim_returns_expected(token:str, expected_payloads: object, expected_exp:int, is_expired:bool, expected_errors: list, expected_warnings: list):
+def test_analyse_token_exp_claim_returns_expected(token:str, expected_payloads: object, expected_exp:int, is_expired:bool, expected_errors: list, expected_warnings: list):
     # This token is a valid JWT token but it is missing the alg claim in the header.
     expected = {
         "token": token,
@@ -224,5 +225,35 @@ def test_analyse_token_when_token_has_missing_or_empty_exp_claim_returns_expecte
     }
 
     actual = analyse_token(token, 1775997355)
+
+    assert actual == expected
+
+def test_analyse_token_when_token_is_valid_and_not_expired_returns_expected():
+    expiry = int(datetime.now(timezone.utc).timestamp())
+    # This token is a valid JWT token and it is not expired as the exp claim is set to a future timestamp.
+    valid_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ2YWxpZEB1c2VyLnRlc3QuY28udWsiLCJlbWFpbCI6InZhbGlkQHVzZXIudGVzdC5jby51ayIsImp0aSI6IjA3Nzk5YWNjLTNlYmYtNGFlOS1iOWRkLTNjN2VjODA1NTI3MyIsImV4cCI6MTc3NTkwNzcxMiwiaXNzIjoiSnd0VGVzdEFwaSIsImF1ZCI6Ikp3dFRlc3RBcGlVc2VycyJ9.LKodA7Hw5W32FcPzrTDGNXPQpLHVMe_hNieXBwI8ZD4"
+    expected = {
+        "token": valid_token,
+        "is_valid_format": True,
+        "segment_count": 3,
+        "header": {"alg": "HS256", "typ": "JWT"},
+        "payload": {
+                  "sub": "valid@user.test.co.uk",
+                  "email": "valid@user.test.co.uk",
+                  "jti": "07799acc-3ebf-4ae9-b9dd-3c7ec8055273",
+                  "exp": 1775907712, # 11th April 2026
+                  "iss": "JwtTestApi",
+                  "aud": "JwtTestApiUsers"
+                },
+        "signature": None,
+        "alg" : "HS256",
+        "sub" : "valid@user.test.co.uk",
+        "exp" : 1775907712, # 11th April 2026
+        "is_expired": False,
+        "errors": [],
+        "warnings": []
+    }
+
+    actual = analyse_token(valid_token, 1775907700)
 
     assert actual == expected
