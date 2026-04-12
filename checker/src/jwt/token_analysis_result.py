@@ -11,6 +11,6 @@ class TokenAnalysisResult(TypedDict):
     signature: Optional[str]
     alg: str | None
     sub: str | None
-    exp: str | None
+    exp: int | None
     is_expired: bool | None
     errors: list[str]

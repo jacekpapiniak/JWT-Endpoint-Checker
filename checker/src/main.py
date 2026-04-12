@@ -3,6 +3,7 @@ from .cli.cli import build_cli # Import the argpars
 from .validators.parser_validator import validate_arguments # Import the function to validate command line arguments
 from .test_api import run_local_api_server, stop_api_server # Import the function to run the local API server
 from .jwt import token_loader # Import the token loader module to handle token loading from string, file, or URL
+from datetime import datetime, timezone # for converting the exp claim to a human-readable format
 
 def main():
     cli_parser = build_cli()
@@ -36,7 +37,7 @@ def main():
 
         token = token_loader.load_token(args.token, email, password)
         print(f"Token loaded successfully: {token}")
-        token_analysis_result = token_analyser.analyse_token(token)
+        token_analysis_result = token_analyser.analyse_token(token, int(datetime.now(timezone.utc).timestamp()))
         print("Token analysis result:")
         print(token_analysis_result)
     else:
