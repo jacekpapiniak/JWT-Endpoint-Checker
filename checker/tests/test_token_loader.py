@@ -2,12 +2,9 @@
 
 import pytest
 import responses # Import responses for mocking HTTP requests in tests
-from checker.src.cli.cli import build_cli
 from checker.src.jwt.token_loader import load_token, load_token_from_file, load_token_from_url
-from checker.src.validators.parser_validator import get_token_type, validate_arguments
 
 # Test cases for token_loader.py
-
 test_jwt_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ2YWxpZEB1c2VyLnRlc3QuY28udWsiLCJlbWFpbCI6InZhbGlkQHVzZXIudGVzdC5jby51ayIsImp0aSI6IjA3Nzk5YWNjLTNlYmYtNGFlOS1iOWRkLTNjN2VjODA1NTI3MyIsImV4cCI6MTc3NTkwNzcxMiwiaXNzIjoiSnd0VGVzdEFwaSIsImF1ZCI6Ikp3dFRlc3RBcGlVc2VycyJ9.LKodA7Hw5W32FcPzrTDGNXPQpLHVMe_hNieXBwI8ZD4"
 
 def test_load_token_from_string_when_valid_jwt_token_should_return_token_value():

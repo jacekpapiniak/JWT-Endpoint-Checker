@@ -1,4 +1,5 @@
-﻿from .cli.cli import build_cli # Import the argpars
+﻿from .jwt import token_analyser # Import the token analyser module to perform analysis on the loaded JWT token
+from .cli.cli import build_cli # Import the argpars
 from .validators.parser_validator import validate_arguments # Import the function to validate command line arguments
 from .test_api import run_local_api_server, stop_api_server # Import the function to run the local API server
 from .jwt import token_loader # Import the token loader module to handle token loading from string, file, or URL
@@ -35,8 +36,11 @@ def main():
 
         token = token_loader.load_token(args.token, email, password)
         print(f"Token loaded successfully: {token}")
-
-    print("No action specified. Use -h or --help for usage information.")
+        token_analysis_result = token_analyser.analyse_token(token)
+        print("Token analysis result:")
+        print(token_analysis_result)
+    else:
+        print("No action specified. Use -h or --help for usage information.")
 
 if __name__ == "__main__":
     main()
