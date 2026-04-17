@@ -1,9 +1,8 @@
-﻿import pytest
-import json
+﻿import json
 import responses # Import responses for mocking HTTP requests in tests
 
-from checker.src.endpoint.endpoint_analyser import analyse_endpoint
-from checker.src.endpoint.endpoint_validation_result import EndpointValidationResult
+from checker.src.analyser.endpoint.endpoint_analyser import analyse_endpoint
+from checker.src.analyser.endpoint.endpoint_validation_result import EndpointValidationResult
 
 test_endpoint_url = "http://localhost:5000/api/profile"
 test_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJtaXNjb25maWd1cmVkQHVzZXIudGVzdC5jby51ayIsImVtYWlsIjoibWlzY29uZmlndXJlZEB1c2VyLnRlc3QuY28udWsiLCJqdGkiOiJlNDE5NTRkYS1jMTNjLTRmZDMtYTc5Yy04ZjUyNGNhODU1MGIiLCJleHAiOjEzMDYyNTQ3NTgwMCwiaXNzIjoiSnd0VGVzdEFwaSIsImF1ZCI6Ikp3dFRlc3RBcGlVc2VycyJ9.b9jEEhFkmgfWjkE4O3ig8A_3tPDXOSekJhGiT1G8Y64"

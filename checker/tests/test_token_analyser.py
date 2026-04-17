@@ -2,7 +2,7 @@
 import base64
 import json
 from datetime import datetime, timezone # for converting the exp claim to a human-readable format
-from checker.src.jwt.token_analyser import decode_base64, analyse_token
+from checker.src.analyser.jwt.token_analyser import decode_base64, analyse_token
 
 # Test cases values for decode_base64 function
 # Just expected dictionary values.

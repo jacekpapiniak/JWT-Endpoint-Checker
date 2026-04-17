@@ -1,5 +1,5 @@
 ﻿import requests # To make HTTP requests
-from checker.src.endpoint.endpoint_validation_result import EndpointValidationResult # for defining the structure of the validation result
+from checker.src.analyser.endpoint.endpoint_validation_result import EndpointValidationResult # for defining the structure of the validation result
 
 def analyse_endpoint(endpoint_url: str, token: str) -> EndpointValidationResult:
     if not endpoint_url:

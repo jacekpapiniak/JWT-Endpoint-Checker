@@ -1,11 +1,10 @@
-﻿from .jwt import token_analyser # Import the token analyser module to perform analysis on the loaded JWT token
-from .cli.cli import build_cli # Import the argpars
+﻿from .cli.cli import build_cli # Import the argpars
 from .validators.parser_validator import validate_arguments # Import the function to validate command line arguments
 from .test_api import run_local_api_server, stop_api_server # Import the function to run the local API server
-from .jwt import token_loader, token_analyser # Import the token loader module to handle token loading from string, file, or URL
-from checker.src.jwt.token_analysis_result import TokenAnalysisResult # for defining the structure of the analysis result
-from checker.src.endpoint.endpoint_analyser import analyse_endpoint
-from checker.src.endpoint.endpoint_validation_result import EndpointValidationResult
+from checker.src.analyser.jwt import token_loader, token_analyser # Import the token loader module to handle token loading from string, file, or URL
+from checker.src.analyser.jwt.token_analysis_result import TokenAnalysisResult # for defining the structure of the analysis result
+from checker.src.analyser.endpoint.endpoint_analyser import analyse_endpoint
+from checker.src.analyser.endpoint.endpoint_validation_result import EndpointValidationResult
 from datetime import datetime, timezone # for converting the exp claim to a human-readable format
 
 def main():

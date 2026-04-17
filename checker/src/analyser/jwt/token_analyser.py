@@ -1,6 +1,6 @@
 ﻿import base64 # for base64 decoding
 import json # for parsing the JSON payload of the JWT token
-from checker.src.jwt.token_analysis_result import TokenAnalysisResult # for defining the structure of the analysis result
+from checker.src.analyser.jwt.token_analysis_result import TokenAnalysisResult # for defining the structure of the analysis result
 
 def calculate_missing_padding(token_part: str, multiply_factor: int) -> int:
     # Calculate the number of padding characters needed
