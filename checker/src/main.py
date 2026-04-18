@@ -32,8 +32,8 @@ def main():
 
     token : str
     analysis_result : FinalAnalysisResult
-    token_analysis_result : TokenAnalysisResult
-    endpoint_analysis_result : EndpointValidationResult
+    token_analysis_result : TokenAnalysisResult = None
+    endpoint_analysis_result : EndpointValidationResult = None
 
     if args.token:
         print("Loading token...")
