@@ -13,7 +13,7 @@ from typing import Optional
 @dataclass
 class EndpointValidationResult:
     endpoint_url: str
-    token_ending: str
+    token: str
     response: str = ""
     status_code: int = 0
     response_json: Optional[dict] = None

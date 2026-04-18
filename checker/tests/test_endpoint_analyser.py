@@ -17,7 +17,7 @@ def test_analyse_endpoint_success():
             }
     expected = EndpointValidationResult(
         endpoint_url=test_endpoint_url,
-        token_ending=test_token if test_token else "",
+        token=test_token if test_token else "",
         response=json.dumps(expected_json_response),
         response_json= expected_json_response,
         status_code=200
@@ -39,7 +39,7 @@ def test_analyse_endpoint_returns_404_not_found():
     # This test will check if the analyse_endpoint function works correctly when the endpoint returns a failed response.
     expected = EndpointValidationResult(
         endpoint_url=test_endpoint_url,
-        token_ending=test_token if test_token else "",
+        token=test_token if test_token else "",
         response="Not Found",
         response_json=None,
         status_code=404,
@@ -63,7 +63,7 @@ def test_analyse_endpoint_returns_500_internal_server_error():
     # This test will check if the analyse_endpoint function works correctly when the endpoint returns a failed response.
     expected = EndpointValidationResult(
         endpoint_url=test_endpoint_url,
-        token_ending=test_token if test_token else "",
+        token=test_token if test_token else "",
         response="Internal Server Error",
         response_json=None,
         status_code=500,
@@ -87,7 +87,7 @@ def test_analyse_endpoint_request_exception():
     # This test will check if the analyse_endpoint function works correctly when there is an exception thrown while making the request to the endpoint.
     expected = EndpointValidationResult(
         endpoint_url=test_endpoint_url,
-        token_ending=test_token if test_token else "",
+        token=test_token if test_token else "",
         response="",
         response_json=None,
         status_code=0,
@@ -116,7 +116,7 @@ def test_analyse_endpoint_empty_token():
             }
     expected = EndpointValidationResult(
         endpoint_url=test_endpoint_url,
-        token_ending=test_token if test_token else "",
+        token=test_token if test_token else "",
         response=json.dumps(expected_json_response),
         response_json= expected_json_response,
         status_code=200

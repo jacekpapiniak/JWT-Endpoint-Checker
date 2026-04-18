@@ -17,7 +17,7 @@ def analyse_endpoint(endpoint_url: str, token: str) -> EndpointValidationResult:
     # structure of the token and the claims it contains.
     result = EndpointValidationResult(
         endpoint_url=endpoint_url,
-        token_ending=token if token else "",
+        token=token if token else "",
     )
 
     try:

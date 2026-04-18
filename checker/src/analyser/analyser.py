@@ -94,17 +94,17 @@ def analyse_results(token_result : TokenAnalysisResult, endpoint_result : Endpoi
                ]
            ))
 
-       severity = calculate_overall_severity(all_findings)
+    severity = calculate_overall_severity(all_findings)
 
-       if all_findings:
-            summary = (
-                f"Analysis completed with {len(all_findings)} finding(s). "
-                f"Overall severity: {severity.name}."
-            )
-       else:
-            summary = "Analysis completed with no significant findings."
+    if all_findings:
+        summary = (
+            f"Analysis completed with {len(all_findings)} finding(s). "
+            f"Overall severity: {severity.name}."
+        )
+    else:
+        summary = "Analysis completed with no significant findings."
 
-       return FinalAnalysisResult(
+    return FinalAnalysisResult(
         summary=summary,
         severity=severity,
         token_analysis=token_result,
