@@ -28,12 +28,13 @@ public class JwtTokenService
 
     public LoginResponse GenerateToken(string email)
     {
+        var yearInMinutes = TimeSpan.FromDays(365).TotalMinutes;
         return email switch
         {
             Email.ValidUser => new LoginResponse(CreateToken(email, 10)),
             Email.MalformedUser => CreateMalformedTokenResponse(Email.MalformedUser),
-            Email.ExpiredUser => new LoginResponse(CreateToken(email, -TimeSpan.FromDays(2*365).Minutes)),
-            Email.MisconfiguredUser => new LoginResponse(CreateToken(email, TimeSpan.FromDays(2*365).Minutes)),
+            Email.ExpiredUser => new LoginResponse(CreateToken(email, -yearInMinutes)),
+            Email.MisconfiguredUser => new LoginResponse(CreateToken(email, yearInMinutes)),
             Email.InvalidUser => new LoginResponse("Not a Jwt Token"),
             _ => new LoginResponse(string.Empty)
         };
@@ -100,7 +101,7 @@ public class JwtTokenService
         return new LoginResponse(corruptedToken);
     }
 
-    private string CreateToken(string subject, int expiresInMinutes)
+    private string CreateToken(string subject, double expiresInMinutes)
     {
         Claim[] claims =
         [

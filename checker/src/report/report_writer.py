@@ -11,13 +11,7 @@ from checker.src.analyser.jwt.token_analysis_result import TokenAnalysisResult
 from checker.src.analyser.endpoint.endpoint_validation_result import EndpointValidationResult
 from checker.src.analyser.finding import Finding
 from checker.src.analyser.final_analysis_result import FinalAnalysisResult
-
-def convert_to_utc(timestamp : int | None) -> str:
-    if timestamp is None:
-        return "None"
-    else:
-        dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
-        return dt.strftime('%d-%m-%Y %H:%M:%S UTC')
+from checker.src.helpers.time_helper import convert_to_utc
 
 def build_report_header(lines: list[str], severity : Severity) -> list[str]:
     lines.append("JWT ENDPOINT CHECKER REPORT")
@@ -43,8 +37,8 @@ def build_jwt_report(lines: list[str], token : TokenAnalysisResult, section_numb
         lines.append(f"Valid Format: {'Yes' if token['is_valid_format'] else 'No'}")
         lines.append(f"Segment Count: {token['segment_count']}")
         lines.append(f"Algorithm (alg): {token['alg']}")
-        lines.append(f"Subject (sub): {token['alg']}")
-        lines.append(f"Expiration (exp): {convert_to_utc(token['exp'])}")
+        lines.append(f"Subject (sub): {token['sub']}")
+        lines.append(f"Expiration (exp): {token['exp']} {convert_to_utc(token['exp'])}")
         lines.append(f"Is Expired: {'Expired' if token['is_expired'] else 'Not Expired'}")
         lines.append(f"Signature: {token['signature']}")
         lines.append("")
@@ -114,8 +108,15 @@ def build_finding_section(lines: list[str], findings : list[Finding], section_nu
         lines.append("No findings identified")
         lines.append("")
     else:
+
+        # Right now findings are not sorted by the severity.
+        # In order to sort findings by descending order from highest to lowest
+        # we use C# OrderByDescending equivalent.
+
+        sorted_findings = sorted(findings, key=lambda f: f.severity, reverse=True)
+
         # Enumerate all findings and print them as a list starting from 1.
-        for index, finding in enumerate(findings):
+        for index, finding in enumerate(sorted_findings):
             lines.append(f"{index +1}: [{finding.severity}] {finding.title}")
             lines.append(f"\tDescription: {finding.description}")
             lines.append("")
@@ -130,16 +131,21 @@ def build_finding_section(lines: list[str], findings : list[Finding], section_nu
 
     return lines, section_number
 
-def build_errors_warnings_report(lines: list[str], token: TokenAnalysisResult, endpoint : EndpointValidationResult | None, section_number : int) -> tuple[list[str], int]:
-
-    any_messages = token["errors"] or endpoint.errors or endpoint.warnings
-    section_number = section_number if not any_messages else section_number + 1
-
-    # FINDINGS
+# This function builds report from summary
+def build_summary_report(lines: list[str], summary: str, section_number : int) -> tuple[list[str], int]:
+    section_number += 1
+    # SUMMARY
     lines.append("=" * 60)
-    lines.append(f"= {section_number}. FINDINGS")
+    lines.append(f"= {section_number}. SUMMARY")
     lines.append("=" * 60)
-# This function builds report from Final Analysis Result into more human-readable form
+
+    if summary:
+        lines.append(summary)
+    else:
+        lines.append("No summary created.")
+    lines.append("")
+
+    return lines, section_number
 def build_report(result : FinalAnalysisResult) -> str:
     # Create list to which will add lines and build report.
     # Alternative solution would be to find if there is string builder available for python.
@@ -162,11 +168,10 @@ def build_report(result : FinalAnalysisResult) -> str:
     # Create Findings Section
     lines, section_number = build_finding_section(lines, findings, section_number)
 
-    # Errors and warnings
-    lines, section_number = build_finding_section(lines, token, endpoint, section_number)
+    # Summary
+    lines, section_number = build_summary_report(lines, result.summary, section_number)
 
-
-    return ""
+    return "\n".join(lines)
 
 # This function will build report text based on Final Analysis Result,
 # Then it will output report to the console.
@@ -180,10 +185,12 @@ def output_report(result : FinalAnalysisResult, output_path : str | None = None)
 
     # If the output path is supplied and leads to existing directory then continue
     # and file name extension is txt, then we know it is a valid path.
-    if output_path and ".txt" in output_path and Path(output_path).parent.is_dir():
+    if output_path is None:
+            return
+
+    if ".txt" in output_path and Path(output_path).parent.is_dir():
         Path(output_path).write_text(report, "utf-8")
         print(f"Report has been written to: {output_path}")
-
     else:
         print("Provided path for report output is invalid.")
 
