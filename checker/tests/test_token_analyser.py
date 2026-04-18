@@ -106,7 +106,7 @@ def test_analyse_token_when_token_is_expired_returns_expected():
             Finding(
                 title='Expired JWT Token',
                 severity=Severity.MEDIUM,
-                description="\n            The token is expired based on the 'exp' claim. \n            Current time: 1775997355, Expiry time: 1775907712.",
+                description="\n            The token is expired based on the 'exp' claim. \n            Current time: 1775997355 12-04-2026 12:35:55 UTC, Expiry time: 1775907712 11-04-2026 11:41:52 UTC.",
                 recommendations=[
                     'Obtain a new token that has not expired.',
                     'Review the token generation process to ensure that tokens have appropriate expiration times as per JWT best practices.'])
@@ -285,7 +285,7 @@ def test_analyse_token_when_token_has_missing_or_empty_sub_claim_returns_expecte
         Finding(
             title='Expired JWT Token',
             severity= Severity.MEDIUM,
-            description="\n            The token is expired based on the 'exp' claim. \n            Current time: 1775997355, Expiry time: 1775907712.",
+            description="\n            The token is expired based on the 'exp' claim. \n            Current time: 1775997355 12-04-2026 12:35:55 UTC, Expiry time: 1775907712 11-04-2026 11:41:52 UTC.",
             recommendations=['Obtain a new token that has not expired.', 'Review the token generation process to ensure that tokens have appropriate expiration times as per JWT best practices.'])
     ]),
 
@@ -308,7 +308,7 @@ def test_analyse_token_when_token_has_missing_or_empty_sub_claim_returns_expecte
         Finding(
             title='Token With Long Expiry Time',
             severity= Severity.MEDIUM,
-            description='\n            The token has a long expiry time and expires in 31588444847 seconds. \n            Current time: 1775997355, Expiry time: 33364442202. \n            Consider setting a shorter expiry time for better security.',
+            description='\n            The token has a long expiry time and expires in 31588444847 seconds. \n            Current time: 1775997355 12-04-2026 12:35:55 UTC, Expiry time: 33364442202 22-01-1971 03:54:02 UTC.',
             recommendations=["Consider reducing the token's expiry time to minimize the risk of token misuse if the token is compromised.",
                              'Review the token generation process to ensure that tokens have appropriate expiration times as per JWT best practices.'])
     ]),

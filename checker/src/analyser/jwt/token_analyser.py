@@ -228,8 +228,7 @@ def validate_expiry(payload: dict, result: TokenAnalysisResult, current_time_tim
             title="Token With Long Expiry Time",
             description=f'''
             The token has a long expiry time and expires in {expires_in_seconds} seconds. 
-            Current time: {current_time_timestamp} {convert_to_utc(current_time_timestamp)}, Expiry time: {expiry_time} {convert_to_utc(expiry_time)}. 
-            Consider setting a shorter expiry time for better security.''',
+            Current time: {current_time_timestamp} {convert_to_utc(current_time_timestamp)}, Expiry time: {expiry_time} {convert_to_utc(expiry_time)}.''',
             severity=Severity.MEDIUM,
             recommendations=[
                 "Consider reducing the token's expiry time to minimize the risk of token misuse if the token is compromised.",
