@@ -18,6 +18,9 @@ public static class LoginEndpoints
                 { Email: Email.MalformedUser, Password: Email.TestPassword }
                     => Results.Ok(jwtService.GenerateToken(request.Email)),
                 
+                { Email: Email.ExpiredUser, Password: Email.TestPassword }
+                    => Results.Ok(jwtService.GenerateToken(request.Email)),
+                
                 { Email: Email.MisconfiguredUser, Password: Email.TestPassword }
                     => Results.Ok(jwtService.GenerateToken(request.Email)),
                 
