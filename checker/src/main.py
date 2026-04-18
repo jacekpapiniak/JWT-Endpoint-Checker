@@ -2,9 +2,11 @@
 from .validators.parser_validator import validate_arguments # Import the function to validate command line arguments
 from .test_api import run_local_api_server, stop_api_server # Import the function to run the local API server
 from checker.src.analyser.jwt import token_loader, token_analyser # Import the token loader module to handle token loading from string, file, or URL
-from checker.src.analyser.jwt.token_analysis_result import TokenAnalysisResult # for defining the structure of the analysis result
+from checker.src.analyser.analyser import analyse_results
+from checker.src.analyser.final_analysis_result import FinalAnalysisResult # for defining the structure of the analysis result for system
+from checker.src.analyser.jwt.token_analysis_result import TokenAnalysisResult # for defining the structure of the analysis result for jwt
+from checker.src.analyser.endpoint.endpoint_validation_result import EndpointValidationResult # for defining the structure of the endpoint analysis
 from checker.src.analyser.endpoint.endpoint_analyser import analyse_endpoint
-from checker.src.analyser.endpoint.endpoint_validation_result import EndpointValidationResult
 from datetime import datetime, timezone # for converting the exp claim to a human-readable format
 
 def main():
@@ -29,6 +31,7 @@ def main():
         return
 
     token : str
+    analysis_result : FinalAnalysisResult
     token_analysis_result : TokenAnalysisResult
     endpoint_analysis_result : EndpointValidationResult
 
@@ -59,6 +62,12 @@ def main():
         endpoint_analysis_result = analyse_endpoint(args.endpoint, token)
         print("Endpoint analysis result:")
         print(endpoint_analysis_result)
+
+    if token_analysis_result is not None:
+        print(f"Aggregating results")
+        analysis_result = analyse_results(token_analysis_result, endpoint_analysis_result)
+        print(f"Overal results:")
+        print(analysis_result)
     else:
         print("No action specified. Use -h or --help for usage information.")
 
