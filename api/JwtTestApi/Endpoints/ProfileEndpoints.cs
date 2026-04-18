@@ -11,7 +11,6 @@ public static class ProfileEndpoints
     {
         app.MapPost("/profile", async (ProfileRequest request, JwtTokenService jwtService) =>
         {
-            
             var result = await jwtService.IsValidToken(request.Token);
 
             return result.IsValid 

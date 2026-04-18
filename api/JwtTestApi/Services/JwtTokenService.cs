@@ -28,11 +28,13 @@ public class JwtTokenService
 
     public LoginResponse GenerateToken(string email)
     {
+        var yearInMinutes = TimeSpan.FromDays(365).TotalMinutes;
         return email switch
         {
             Email.ValidUser => new LoginResponse(CreateToken(email, 10)),
             Email.MalformedUser => CreateMalformedTokenResponse(Email.MalformedUser),
-            Email.MisconfiguredUser => new LoginResponse(CreateToken(email, int.MaxValue)),
+            Email.ExpiredUser => new LoginResponse(CreateToken(email, -yearInMinutes)),
+            Email.MisconfiguredUser => new LoginResponse(CreateToken(email, yearInMinutes)),
             Email.InvalidUser => new LoginResponse("Not a Jwt Token"),
             _ => new LoginResponse(string.Empty)
         };
@@ -68,7 +70,11 @@ public class JwtTokenService
             ValidateIssuerSigningKey = true,
             ValidateIssuer = true,
             ValidateAudience = true,
-            ValidateLifetime = true, // This makes sure that token expiry time is validated
+            
+            // Deliberate authentication weakness for controlled testing:
+            // lifetime validation is disabled so that expired tokens may still be accepted.
+            ValidateLifetime = false, // This makes sure that token expiry time is validated
+            
             ValidIssuer = _issuer,
             ValidAudience = _audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey)),
@@ -95,7 +101,7 @@ public class JwtTokenService
         return new LoginResponse(corruptedToken);
     }
 
-    private string CreateToken(string subject, int expiresInMinutes)
+    private string CreateToken(string subject, double expiresInMinutes)
     {
         Claim[] claims =
         [

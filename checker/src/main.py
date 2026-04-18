@@ -7,6 +7,7 @@ from checker.src.analyser.final_analysis_result import FinalAnalysisResult # for
 from checker.src.analyser.jwt.token_analysis_result import TokenAnalysisResult # for defining the structure of the analysis result for jwt
 from checker.src.analyser.endpoint.endpoint_validation_result import EndpointValidationResult # for defining the structure of the endpoint analysis
 from checker.src.analyser.endpoint.endpoint_analyser import analyse_endpoint
+from checker.src.report.report_writer import output_report
 from datetime import datetime, timezone # for converting the exp claim to a human-readable format
 
 def main():
@@ -47,8 +48,7 @@ def main():
         token = token_loader.load_token(args.token, email, password)
         print(f"Token loaded successfully: {token}")
         token_analysis_result = token_analyser.analyse_token(token, int(datetime.now(timezone.utc).timestamp()))
-        print("Token analysis result:")
-        print(token_analysis_result)
+        print("Token analysis completed.")
 
     if args.endpoint:
         print("Testing endpoint...")
@@ -60,14 +60,16 @@ def main():
         # - JWT token validation: Information about the validity of the token, its structure, and claims.
         # - Endpoint testing: Information about the accessibility of the endpoint, the response status code.
         endpoint_analysis_result = analyse_endpoint(args.endpoint, token)
-        print("Endpoint analysis result:")
-        print(endpoint_analysis_result)
+        print("Endpoint analysis completed.")
 
     if token_analysis_result is not None:
+        print("")
         print(f"Aggregating results")
+        print("")
         analysis_result = analyse_results(token_analysis_result, endpoint_analysis_result)
-        print(f"Overal results:")
-        print(analysis_result)
+
+        # Write report to CLI and to file if -- write attribute provided with valid path.
+        output_report(analysis_result, args.write if args.write else None)
     else:
         print("No action specified. Use -h or --help for usage information.")
 

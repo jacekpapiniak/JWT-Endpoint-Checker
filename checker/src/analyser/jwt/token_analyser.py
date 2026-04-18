@@ -1,5 +1,7 @@
 ﻿import base64 # for base64 decoding
 import json # for parsing the JSON payload of the JWT token
+
+from checker.src.helpers.time_helper import convert_to_utc
 from checker.src.common.severity import Severity
 from checker.src.analyser.finding import Finding # for defining the structure of the findings
 from checker.src.analyser.jwt.token_analysis_result import TokenAnalysisResult # for defining the structure of the analysis result
@@ -208,7 +210,7 @@ def validate_expiry(payload: dict, result: TokenAnalysisResult, current_time_tim
             title="Expired JWT Token",
             description=f'''
             The token is expired based on the 'exp' claim. 
-            Current time: {current_time_timestamp}, Expiry time: {expiry_time}.''',
+            Current time: {current_time_timestamp} {convert_to_utc(current_time_timestamp)}, Expiry time: {expiry_time} {convert_to_utc(expiry_time)}.''',
             severity=Severity.MEDIUM,
             recommendations=[
                 "Obtain a new token that has not expired.",
@@ -226,8 +228,7 @@ def validate_expiry(payload: dict, result: TokenAnalysisResult, current_time_tim
             title="Token With Long Expiry Time",
             description=f'''
             The token has a long expiry time and expires in {expires_in_seconds} seconds. 
-            Current time: {current_time_timestamp}, Expiry time: {expiry_time}. 
-            Consider setting a shorter expiry time for better security.''',
+            Current time: {current_time_timestamp} {convert_to_utc(current_time_timestamp)}, Expiry time: {expiry_time} {convert_to_utc(expiry_time)}.''',
             severity=Severity.MEDIUM,
             recommendations=[
                 "Consider reducing the token's expiry time to minimize the risk of token misuse if the token is compromised.",
