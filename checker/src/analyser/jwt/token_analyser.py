@@ -223,7 +223,7 @@ def validate_expiry(payload: dict, result: TokenAnalysisResult, current_time_tim
     expires_in_seconds = expiry_time - current_time_timestamp
     if expiry_time - current_time_timestamp > 86400:
         result["findings"].append(Finding(
-            title="Token Expiry Time Warning",
+            title="Token With Long Expiry Time",
             description=f'''
             The token has a long expiry time and expires in {expires_in_seconds} seconds. 
             Current time: {current_time_timestamp}, Expiry time: {expiry_time}. 
@@ -281,7 +281,8 @@ def analyse_token(token: str, current_time_timestamp: int) -> TokenAnalysisResul
         result["findings"].append(Finding(
             title="Invalid token format.",
             description= description,
-            severity= Severity.HIGH
+            severity= Severity.HIGH,
+            recommendations=["Use valid JWT token in valid format header.payload.signature according with RFC 7519 (JSON Web Token)."]
         ))
 
         return result
