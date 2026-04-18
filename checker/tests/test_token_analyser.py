@@ -2,7 +2,9 @@
 import base64
 import json
 from datetime import datetime, timezone # for converting the exp claim to a human-readable format
-from checker.src.jwt.token_analyser import decode_base64, analyse_token
+from checker.src.common.severity import Severity
+from checker.src.analyser.finding import Finding
+from checker.src.analyser.jwt.token_analyser import decode_base64, analyse_token
 
 # Test cases values for decode_base64 function
 # Just expected dictionary values.
@@ -38,14 +40,14 @@ def test_decode_base64_when_decoded_text_is_not_valid_json_should_raise_decode_e
         decode_base64(encoded)
 
 
-@pytest.mark.parametrize("token, expected_segment_count, expected_errors",
+@pytest.mark.parametrize("token, expected_segment_count, expected_description",
 [
-    ("Not even a jwt", 0, ["Invalid token format. A JWT token must consist of three segments separated by dots. Found 0 segments."]),
-    ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.", 1, ["Invalid token format. A JWT token must consist of three segments separated by dots. Found 1 segment."]),
+    ("Not even a jwt", 0, "Invalid token format. A JWT token must consist of three segments separated by dots. Found 0 segments."),
+    ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.", 1, "Invalid token format. A JWT token must consist of three segments separated by dots. Found 1 segment."),
     ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ2YWxpZEB1c2VyLnRlc3QuY28udWsiLCJlbWFpbCI6InZhbGlkQHVzZXIudGVzdC5jby51ayIsImp0aSI6IjA3Nzk5YWNjLTNlYmYtNGFlOS1iOWRkLTNjN2VjODA1NTI3MyIsImV4cCI6MTc3NTkwNzcxMiwiaXNzIjoiSnd0VGVzdEFwaSIsImF1ZCI6Ikp3dFRlc3RBcGlVc2VycyJ9",
-     2, ["Invalid token format. A JWT token must consist of three segments separated by dots. Found 2 segments."]),
+     2, "Invalid token format. A JWT token must consist of three segments separated by dots. Found 2 segments."),
 ])
-def test_analyse_token_when_token_has_invalid_format_and_only_one_segment_returns_expected(token: str, expected_segment_count: int, expected_errors: list):
+def test_analyse_token_when_token_has_invalid_format_and_only_one_segment_returns_expected(token: str, expected_segment_count: int, expected_description: str):
     #This token is not a valid JWT token it only has one segment.
     expected = {
         "token": token,
@@ -58,9 +60,16 @@ def test_analyse_token_when_token_has_invalid_format_and_only_one_segment_return
         "sub" : None,
         "exp" : None,
         "is_expired": None,
-        "errors": expected_errors,
-        "warnings": []
+        "errors": [],
+        "findings" : [
+            Finding(
+                title='Invalid token format.',
+                severity= Severity.HIGH,
+                description = expected_description,
+                recommendations = ["Use valid JWT token in valid format header.payload.signature according with RFC 7519 (JSON Web Token)."])
+        ]
     }
+
     actual = analyse_token(token, 1775997355)
 
     assert actual == expected
@@ -86,8 +95,22 @@ def test_analyse_token_when_token_is_expired_returns_expected():
         "sub" : "valid@user.test.co.uk",
         "exp" : 1775907712, # 11th April 2026
         "is_expired": True,
-        "errors": ["The token is expired - Current time: 1775997355, Expiry time: 1775907712."],
-        "warnings": []
+        "errors": [],
+        "findings": [
+            Finding(
+                title='Symmetric JWT Algorithm Detected',
+                severity=Severity.LOW,
+                description='The token is using a symmetric signing algorithm (hs256). This requires secure management of the shared secret, as compromise of the secret allows full token forgery.',
+                recommendations=[
+                    'Ensure strong secret key management and consider using asymmetric algorithms (e.g., RS256) for better key separation between issuer and verifier.']),
+            Finding(
+                title='Expired JWT Token',
+                severity=Severity.MEDIUM,
+                description="\n            The token is expired based on the 'exp' claim. \n            Current time: 1775997355, Expiry time: 1775907712.",
+                recommendations=[
+                    'Obtain a new token that has not expired.',
+                    'Review the token generation process to ensure that tokens have appropriate expiration times as per JWT best practices.'])
+        ]
     }
 
     actual = analyse_token(expired_token, 1775997355)
@@ -95,7 +118,7 @@ def test_analyse_token_when_token_is_expired_returns_expected():
     assert actual == expected
 
 #Test missing or empty sub claim
-@pytest.mark.parametrize("token, expected_payloads, expected_errors",
+@pytest.mark.parametrize("token, expected_payloads, expected_findings",
 [
     ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InZhbGlkQHVzZXIudGVzdC5jby51ayIsImp0aSI6IjA3Nzk5YWNjLTNlYmYtNGFlOS1iOWRkLTNjN2VjODA1NTI3MyIsImV4cCI6MTc3NTkwNzcxMiwiaXNzIjoiSnd0VGVzdEFwaSIsImF1ZCI6Ikp3dFRlc3RBcGlVc2VycyJ9.CDBc0uBuBbM_yBiyL8y7nZafmDcY8imJ_NAXr-bU1bE",
      {
@@ -104,8 +127,22 @@ def test_analyse_token_when_token_is_expired_returns_expected():
       "exp": 1775907712, # 11th April 2026
       "iss": "JwtTestApi",
       "aud": "JwtTestApiUsers"
-    },
-    ["Missing 'sub' claim in payload. The 'sub' claim identifies the subject of the token and is typically required for authentication and authorization."]),
+    },[
+         Finding(
+             title='Symmetric JWT Algorithm Detected',
+             severity=Severity.LOW,
+             description='The token is using a symmetric signing algorithm (hs256). This requires secure management of the shared secret, as compromise of the secret allows full token forgery.',
+             recommendations=[
+                 'Ensure strong secret key management and consider using asymmetric algorithms (e.g., RS256) for better key separation between issuer and verifier.']),
+
+         Finding(
+             title="Missing 'sub' Claim in JWT Payload",
+             severity=Severity.MEDIUM,
+             description="\n            The 'sub' claim is missing in the JWT payload. \n            This claim identifies the subject of the token and is typically required for authentication and authorization.",
+             recommendations=[
+                 "Ensure that the JWT token includes the 'sub' claim in the payload, specifying the subject of the token (e.g., user ID, email).",
+                 "Review the token generation process to include the 'sub' claim as per JWT best practices."])
+     ]),
 
     ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIiLCJlbWFpbCI6InZhbGlkQHVzZXIudGVzdC5jby51ayIsImp0aSI6IjA3Nzk5YWNjLTNlYmYtNGFlOS1iOWRkLTNjN2VjODA1NTI3MyIsImV4cCI6MTc3NTkwNzcxMiwiaXNzIjoiSnd0VGVzdEFwaSIsImF1ZCI6Ikp3dFRlc3RBcGlVc2VycyJ9.Yiy36kKs3P_YaSkVeGTwbqp6x2E-Amhu5XjjoMEYNWc",
      {
@@ -115,14 +152,26 @@ def test_analyse_token_when_token_is_expired_returns_expected():
          "exp": 1775907712,  # 11th April 2026
          "iss": "JwtTestApi",
          "aud": "JwtTestApiUsers"
-     },
-    ["Empty 'sub' claim in payload. The 'sub' claim identifies the subject of the token and is typically required for authentication and authorization."]),
+     },[
+            Finding(
+                title='Symmetric JWT Algorithm Detected',
+                severity=Severity.LOW,
+                description='The token is using a symmetric signing algorithm (hs256). This requires secure management of the shared secret, as compromise of the secret allows full token forgery.',
+                recommendations=['Ensure strong secret key management and consider using asymmetric algorithms (e.g., RS256) for better key separation between issuer and verifier.']),
+
+            Finding(
+                title="Empty 'sub' Claim in JWT Payload",
+                severity=Severity.MEDIUM,
+                description="\n            The empty 'sub' claim in the JWT payload. \n            This claim identifies the subject of the token and should not be empty for proper authentication and authorization.",
+                recommendations=["Ensure that the 'sub' claim in the JWT payload is not empty and correctly identifies the subject of the token (e.g., user ID, email).",
+                                 "Review the token generation process to ensure that the 'sub' claim is populated with meaningful information as per JWT best practices."])
+        ]),
 ],
     ids=[
         "missing_sub_claim",
         "empty_sub_claim"
     ])
-def test_analyse_token_when_token_has_missing_or_empty_sub_claim_returns_expected(token:str, expected_payloads: object, expected_errors: list):
+def test_analyse_token_when_token_has_missing_or_empty_sub_claim_returns_expected(token:str, expected_payloads: object, expected_findings: list):
     # This token is a valid JWT token but it is missing the alg claim in the header.
     expected = {
         "token": token,
@@ -135,8 +184,8 @@ def test_analyse_token_when_token_has_missing_or_empty_sub_claim_returns_expecte
         "sub" : None,
         "exp" : 1775907712, # 11th April 2026
         "is_expired": False,
-        "errors": expected_errors,
-        "warnings": []
+        "errors": [],
+        "findings": expected_findings
     }
 
     actual = analyse_token(token, 1775907712)
@@ -144,7 +193,7 @@ def test_analyse_token_when_token_has_missing_or_empty_sub_claim_returns_expecte
     assert actual == expected
 
 # Test expiry
-@pytest.mark.parametrize("token, expected_payloads, expected_exp, is_expired, expected_errors, expected_warnings",
+@pytest.mark.parametrize("token, expected_payloads, expected_exp, is_expired, expected_findings",
 [
     ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ2YWxpZEB1c2VyLnRlc3QuY28udWsiLCJlbWFpbCI6InZhbGlkQHVzZXIudGVzdC5jby51ayIsImp0aSI6IjA3Nzk5YWNjLTNlYmYtNGFlOS1iOWRkLTNjN2VjODA1NTI3MyIsImlzcyI6Ikp3dFRlc3RBcGkiLCJhdWQiOiJKd3RUZXN0QXBpVXNlcnMifQ.eZwsUFmaLe4DGpeXmu4hSPue8QtrphlCNuFa0eOCcno",
      {
@@ -154,7 +203,20 @@ def test_analyse_token_when_token_has_missing_or_empty_sub_claim_returns_expecte
       "iss": "JwtTestApi",
       "aud": "JwtTestApiUsers"
     }, None, None,
-    ["Missing 'exp' claim in payload. The 'exp' claim specifies the expiration time of the token and is important for security to prevent accepting expired tokens."],[]),
+     [
+            Finding(
+                title='Symmetric JWT Algorithm Detected',
+                severity= Severity.LOW,
+                description='The token is using a symmetric signing algorithm (hs256). This requires secure management of the shared secret, as compromise of the secret allows full token forgery.',
+                recommendations=['Ensure strong secret key management and consider using asymmetric algorithms (e.g., RS256) for better key separation between issuer and verifier.']),
+
+            Finding(
+                title="Missing 'exp' Claim in JWT Payload",
+                severity= Severity.HIGH,
+                description="\n            The 'exp' claim is missing in the JWT payload. \n            This claim specifies the expiration time of the token and is important for security to prevent accepting expired tokens.",
+                recommendations=["Ensure that the JWT token includes the 'exp' claim in the payload, specifying the expiration time of the token as a Unix timestamp.",
+                                 "Review the token generation process to include the 'exp' claim as per JWT best practices."])
+        ]),
 
     ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ2YWxpZEB1c2VyLnRlc3QuY28udWsiLCJlbWFpbCI6InZhbGlkQHVzZXIudGVzdC5jby51ayIsImp0aSI6IjA3Nzk5YWNjLTNlYmYtNGFlOS1iOWRkLTNjN2VjODA1NTI3MyIsImV4cCI6IiIsImlzcyI6Ikp3dFRlc3RBcGkiLCJhdWQiOiJKd3RUZXN0QXBpVXNlcnMifQ.D5enpXTCkLRJrVW9z_Pj49et48wWZG-fXldhq49B2uw",
      {
@@ -165,7 +227,20 @@ def test_analyse_token_when_token_has_missing_or_empty_sub_claim_returns_expecte
       "iss": "JwtTestApi",
       "aud": "JwtTestApiUsers"
      }, None, None,
-    ["Empty 'exp' claim in payload. The 'exp' claim should be an integer representing the Unix timestamp of the token's expiration time."],[]),
+    [
+        Finding(
+            title='Symmetric JWT Algorithm Detected',
+            severity= Severity.LOW,
+            description='The token is using a symmetric signing algorithm (hs256). This requires secure management of the shared secret, as compromise of the secret allows full token forgery.',
+            recommendations=['Ensure strong secret key management and consider using asymmetric algorithms (e.g., RS256) for better key separation between issuer and verifier.']),
+
+        Finding(
+            title="Empty 'exp' Claim in JWT Payload",
+            severity= Severity.HIGH,
+            description="\n            The 'exp' claim in the JWT payload is empty. \n            This claim should be an integer representing the Unix timestamp of the token's expiration time.",
+            recommendations=["Ensure that the 'exp' claim in the JWT payload is not empty and correctly specifies the expiration time of the token as a Unix timestamp.",
+                             "Review the token generation process to ensure that the 'exp' claim is populated with a valid timestamp as per JWT best practices."])
+    ]),
 
     ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ2YWxpZEB1c2VyLnRlc3QuY28udWsiLCJlbWFpbCI6InZhbGlkQHVzZXIudGVzdC5jby51ayIsImp0aSI6IjA3Nzk5YWNjLTNlYmYtNGFlOS1iOWRkLTNjN2VjODA1NTI3MyIsImV4cCI6ImRlZmluYXRlbHkgbm90IGludGVnZXIiLCJpc3MiOiJKd3RUZXN0QXBpIiwiYXVkIjoiSnd0VGVzdEFwaVVzZXJzIn0.ipyoR_xj6SG543yG3tbeDSGb8s7QYS_wZZWC_jGxFCQ",
      {
@@ -176,7 +251,20 @@ def test_analyse_token_when_token_has_missing_or_empty_sub_claim_returns_expecte
          "iss": "JwtTestApi",
          "aud": "JwtTestApiUsers"
      }, None, None,
-    ["Invalid 'exp' claim in payload. The 'exp' claim should be an integer representing the Unix timestamp of the token's expiration time."], []),
+    [
+        Finding(
+            title='Symmetric JWT Algorithm Detected',
+            severity= Severity.LOW,
+            description='The token is using a symmetric signing algorithm (hs256). This requires secure management of the shared secret, as compromise of the secret allows full token forgery.',
+            recommendations=['Ensure strong secret key management and consider using asymmetric algorithms (e.g., RS256) for better key separation between issuer and verifier.']),
+
+        Finding(
+            title="Invalid 'exp' Claim in JWT Payload",
+            severity=Severity.HIGH,
+            description="\n            The 'exp' claim in the JWT payload is not a valid integer. \n            This claim should be an integer representing the Unix timestamp of the token's expiration time.",
+            recommendations=["Ensure that the 'exp' claim in the JWT payload is a valid integer and correctly specifies the expiration time of the token as a Unix timestamp.",
+                             "Review the token generation process to ensure that the 'exp' claim is populated with a valid timestamp as per JWT best practices."])
+    ]),
 
     ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ2YWxpZEB1c2VyLnRlc3QuY28udWsiLCJlbWFpbCI6InZhbGlkQHVzZXIudGVzdC5jby51ayIsImp0aSI6IjA3Nzk5YWNjLTNlYmYtNGFlOS1iOWRkLTNjN2VjODA1NTI3MyIsImV4cCI6MTc3NTkwNzcxMiwiaXNzIjoiSnd0VGVzdEFwaSIsImF1ZCI6Ikp3dFRlc3RBcGlVc2VycyJ9.LKodA7Hw5W32FcPzrTDGNXPQpLHVMe_hNieXBwI8ZD4",
      {
@@ -187,7 +275,19 @@ def test_analyse_token_when_token_has_missing_or_empty_sub_claim_returns_expecte
          "iss": "JwtTestApi",
          "aud": "JwtTestApiUsers"
      }, 1775907712, True,
-    ["The token is expired - Current time: 1775997355, Expiry time: 1775907712."], []),
+    [
+        Finding(
+            title='Symmetric JWT Algorithm Detected',
+            severity= Severity.LOW,
+            description='The token is using a symmetric signing algorithm (hs256). This requires secure management of the shared secret, as compromise of the secret allows full token forgery.',
+            recommendations=['Ensure strong secret key management and consider using asymmetric algorithms (e.g., RS256) for better key separation between issuer and verifier.']),
+
+        Finding(
+            title='Expired JWT Token',
+            severity= Severity.MEDIUM,
+            description="\n            The token is expired based on the 'exp' claim. \n            Current time: 1775997355, Expiry time: 1775907712.",
+            recommendations=['Obtain a new token that has not expired.', 'Review the token generation process to ensure that tokens have appropriate expiration times as per JWT best practices.'])
+    ]),
 
     ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ2YWxpZEB1c2VyLnRlc3QuY28udWsiLCJlbWFpbCI6InZhbGlkQHVzZXIudGVzdC5jby51ayIsImp0aSI6IjA3Nzk5YWNjLTNlYmYtNGFlOS1iOWRkLTNjN2VjODA1NTI3MyIsImV4cCI6MzMzNjQ0NDIyMDIsImlzcyI6Ikp3dFRlc3RBcGkiLCJhdWQiOiJKd3RUZXN0QXBpVXNlcnMifQ.VZjEbo3jpXHXeAQBwrJMXoYFfAewj47GroFKBNLf79A",
      {
@@ -198,7 +298,20 @@ def test_analyse_token_when_token_has_missing_or_empty_sub_claim_returns_expecte
          "iss": "JwtTestApi",
          "aud": "JwtTestApiUsers"
      }, 33364442202, False,
-    [], ["The token has a long expiry time and expires in 31588444847 s - Current time: 1775997355, Expiry time: 33364442202. Consider setting a shorter expiry time for better security."]),
+    [
+        Finding(
+            title='Symmetric JWT Algorithm Detected',
+            severity= Severity.LOW,
+            description='The token is using a symmetric signing algorithm (hs256). This requires secure management of the shared secret, as compromise of the secret allows full token forgery.',
+            recommendations=['Ensure strong secret key management and consider using asymmetric algorithms (e.g., RS256) for better key separation between issuer and verifier.']),
+
+        Finding(
+            title='Token With Long Expiry Time',
+            severity= Severity.MEDIUM,
+            description='\n            The token has a long expiry time and expires in 31588444847 seconds. \n            Current time: 1775997355, Expiry time: 33364442202. \n            Consider setting a shorter expiry time for better security.',
+            recommendations=["Consider reducing the token's expiry time to minimize the risk of token misuse if the token is compromised.",
+                             'Review the token generation process to ensure that tokens have appropriate expiration times as per JWT best practices.'])
+    ]),
 ],
  ids=[
      "missing_exp_claim",
@@ -207,7 +320,7 @@ def test_analyse_token_when_token_has_missing_or_empty_sub_claim_returns_expecte
      "expired_exp_claim",
      "too_far_in_future_exp_claim"
  ])
-def test_analyse_token_exp_claim_returns_expected(token:str, expected_payloads: object, expected_exp:int, is_expired:bool, expected_errors: list, expected_warnings: list):
+def test_analyse_token_exp_claim_returns_expected(token:str, expected_payloads: object, expected_exp:int, is_expired:bool, expected_findings: list):
     # This token is a valid JWT token but it is missing the alg claim in the header.
     expected = {
         "token": token,
@@ -220,8 +333,8 @@ def test_analyse_token_exp_claim_returns_expected(token:str, expected_payloads: 
         "sub" : "valid@user.test.co.uk",
         "exp" : expected_exp,
         "is_expired": is_expired,
-        "errors": expected_errors,
-        "warnings": expected_warnings
+        "errors" : [],
+        "findings" : expected_findings
     }
 
     actual = analyse_token(token, 1775997355)
@@ -251,7 +364,13 @@ def test_analyse_token_when_token_is_valid_and_not_expired_returns_expected():
         "exp" : 1775907712, # 11th April 2026
         "is_expired": False,
         "errors": [],
-        "warnings": []
+        "findings" : [
+            Finding(
+                title='Symmetric JWT Algorithm Detected',
+                severity= Severity.LOW,
+                description='The token is using a symmetric signing algorithm (hs256). This requires secure management of the shared secret, as compromise of the secret allows full token forgery.',
+                recommendations=['Ensure strong secret key management and consider using asymmetric algorithms (e.g., RS256) for better key separation between issuer and verifier.'])
+        ]
     }
 
     actual = analyse_token(valid_token, 1775907700)

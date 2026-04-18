@@ -1,4 +1,5 @@
 ﻿from typing import Optional, TypedDict, Any
+from checker.src.analyser.finding import Finding
 
 # This class represnts the results of the jwt token analysis.
 # It is a TypedDict, which is a special type of dictionary that allows us to specify the types of the keys and values.
@@ -14,4 +15,4 @@ class TokenAnalysisResult(TypedDict):
     exp: int | None
     is_expired: bool | None
     errors: list[str]
-    warnings: list[str]
+    findings: list[Finding]
