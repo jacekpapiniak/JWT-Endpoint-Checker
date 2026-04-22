@@ -4,9 +4,10 @@ from checker.src.common.severity import Severity
 from checker.src.analyser.finding import Finding
 from checker.src.analyser.endpoint.endpoint_validation_result import EndpointValidationResult
 from checker.src.analyser.final_analysis_result import FinalAnalysisResult
-from checker.src.analyser.analyser import analyse_results
+from checker.src.analyser.aggregator import analyse_results
 
 url = "http://superhacky.co.uk:5000/api/login"
+secured_endpoint_url = "http://superhacky.co.uk:5000/api/profile"
 
 successful_json_response = {
     "name": "Valid User",
@@ -75,13 +76,27 @@ def test_analyse_results_when_endpoint_result_is_some_and_malformed_jwt_accepted
                 recommendations = ["Use valid JWT token in valid format header.payload.signature according with RFC 7519 (JSON Web Token)."])
         ]
     }
-    endpoint_result : EndpointValidationResult =  EndpointValidationResult(
-        endpoint_url= url,
+    endpoint_result : EndpointValidationResult = EndpointValidationResult(
+        endpoint_url=secured_endpoint_url,
         token= token,
         response=json.dumps(successful_json_response),
         response_json= successful_json_response,
-        status_code=200
-    )
+        status_code=200,
+        errors=[],
+        warnings=[],
+        findings=[
+            Finding(
+                title='Endpoint accepted malformed token.',
+                severity=Severity.CRITICAL,
+                description=f'The endpoint {secured_endpoint_url} returned HTTP 200 (OK)with JWT token with invalid format.',
+                recommendations=['Ensure that JWT toke structure is validated by the endpoint before processing authorization.']),
+
+            Finding(
+                title='Endpoint accepted token with missing subject claim.',
+                severity=Severity.HIGH,
+                description=f'The endpoint {secured_endpoint_url} returned HTTP 200 (OK)with missing subject claim in JWT token.',
+                recommendations=["Require identity-related claims such as 'sub' before authorizing requests."])
+        ])
 
     actual = analyse_results(token_result, endpoint_result)
 
@@ -99,14 +114,14 @@ def test_analyse_results_when_endpoint_result_is_some_and_malformed_jwt_accepted
 
             Finding(
                 title='Endpoint accepted malformed token.',
-                severity= Severity.CRITICAL,
-                description='The endpoint http://superhacky.co.uk:5000/api/login returned HTTP 200 (OK)with JWT token with invalid format.',
+                severity=Severity.CRITICAL,
+                description=f'The endpoint {secured_endpoint_url} returned HTTP 200 (OK)with JWT token with invalid format.',
                 recommendations=['Ensure that JWT toke structure is validated by the endpoint before processing authorization.']),
 
             Finding(
                 title='Endpoint accepted token with missing subject claim.',
-                severity= Severity.HIGH,
-                description='The endpoint http://superhacky.co.uk:5000/api/login returned HTTP 200 (OK)with missing subject claim in JWT token.',
+                severity=Severity.HIGH,
+                description=f'The endpoint {secured_endpoint_url} returned HTTP 200 (OK)with missing subject claim in JWT token.',
                 recommendations=["Require identity-related claims such as 'sub' before authorizing requests."])
         ]
     )
@@ -148,13 +163,21 @@ def test_analyse_results_when_endpoint_result_is_some_and_expired_jwt_accepted_b
                     'Review the token generation process to ensure that tokens have appropriate expiration times as per JWT best practices.'])
         ]
     }
-    endpoint_result : EndpointValidationResult =  EndpointValidationResult(
-        endpoint_url= url,
+    endpoint_result : EndpointValidationResult = EndpointValidationResult(
+        endpoint_url= secured_endpoint_url,
         token= expired_token,
         response=json.dumps(successful_json_response),
         response_json= successful_json_response,
-        status_code=200
-    )
+        status_code=200,
+        errors=[],
+        warnings=[],
+        findings=[
+            Finding(
+                title='Endpoint accepted expired token.',
+                severity=Severity.HIGH,
+                description=f'The endpoint {secured_endpoint_url} returned HTTP 200 (OK)with expired JWT token.',
+                recommendations=['Ensure that endpoint validates JWT tokens expiration.']
+        )])
 
     actual = analyse_results(token_result, endpoint_result)
 
@@ -178,9 +201,10 @@ def test_analyse_results_when_endpoint_result_is_some_and_expired_jwt_accepted_b
 
             Finding(
                 title='Endpoint accepted expired token.',
-                severity= Severity.HIGH,
-                description='The endpoint http://superhacky.co.uk:5000/api/login returned HTTP 200 (OK)with expired JWT token.',
-                recommendations=['Ensure that endpoint validates JWT tokens expiration.'])
+                severity=Severity.HIGH,
+                description=f'The endpoint {secured_endpoint_url} returned HTTP 200 (OK)with expired JWT token.',
+                recommendations=['Ensure that endpoint validates JWT tokens expiration.']
+            )
         ])
 
 def test_analyse_results_when_endpoint_result_is_some_and_no_sub_set_in_jwt_accepted_by_endpoint_return_expected():
@@ -220,13 +244,21 @@ def test_analyse_results_when_endpoint_result_is_some_and_no_sub_set_in_jwt_acce
                  "Review the token generation process to include the 'sub' claim as per JWT best practices."])
      ]
     }
-    endpoint_result : EndpointValidationResult =  EndpointValidationResult(
-        endpoint_url= url,
+    endpoint_result : EndpointValidationResult = EndpointValidationResult(
+        endpoint_url= secured_endpoint_url,
         token= no_sub_token,
         response=json.dumps(successful_json_response),
         response_json= successful_json_response,
-        status_code=200
-    )
+        status_code=200,
+        errors=[],
+        warnings=[],
+        findings=[
+            Finding(
+                title='Endpoint accepted token with missing subject claim.',
+                severity=Severity.HIGH,
+                description=f'The endpoint {secured_endpoint_url} returned HTTP 200 (OK)with missing subject claim in JWT token.',
+                recommendations=["Require identity-related claims such as 'sub' before authorizing requests."])
+    ])
 
     actual = analyse_results(token_result, endpoint_result)
 
@@ -250,7 +282,7 @@ def test_analyse_results_when_endpoint_result_is_some_and_no_sub_set_in_jwt_acce
 
             Finding(title='Endpoint accepted token with missing subject claim.',
                     severity= Severity.HIGH,
-                    description='The endpoint http://superhacky.co.uk:5000/api/login returned HTTP 200 (OK)with missing subject claim in JWT token.',
+                    description=f'The endpoint {secured_endpoint_url} returned HTTP 200 (OK)with missing subject claim in JWT token.',
                     recommendations=["Require identity-related claims such as 'sub' before authorizing requests."])
     ])
 
@@ -291,12 +323,20 @@ def test_analyse_results_when_endpoint_result_is_some_and_empty_sub_set_in_jwt_a
         ]
     }
     endpoint_result : EndpointValidationResult =  EndpointValidationResult(
-        endpoint_url= url,
+        endpoint_url= secured_endpoint_url,
         token= empty_sub_token,
         response=json.dumps(successful_json_response),
         response_json= successful_json_response,
-        status_code=200
-    )
+        status_code=200,
+        errors=[],
+        warnings=[],
+        findings=[
+            Finding(
+                title='Endpoint accepted token with missing subject claim.',
+                severity=Severity.HIGH,
+                description='The endpoint http://localhost:5000/api/profile returned HTTP 200 (OK)with missing subject claim in JWT token.',
+                recommendations=["Require identity-related claims such as 'sub' before authorizing requests."])
+    ])
 
     actual = analyse_results(token_result, endpoint_result)
 
@@ -321,8 +361,8 @@ def test_analyse_results_when_endpoint_result_is_some_and_empty_sub_set_in_jwt_a
 
             Finding(
                 title='Endpoint accepted token with missing subject claim.',
-                severity= Severity.HIGH,
-                description='The endpoint http://superhacky.co.uk:5000/api/login returned HTTP 200 (OK)with missing subject claim in JWT token.',
+                severity=Severity.HIGH,
+                description='The endpoint http://localhost:5000/api/profile returned HTTP 200 (OK)with missing subject claim in JWT token.',
                 recommendations=["Require identity-related claims such as 'sub' before authorizing requests."])
     ])
 
@@ -355,12 +395,22 @@ def test_analyse_results_when_endpoint_result_is_server_side_error_500_returned_
                 recommendations=['Ensure strong secret key management and consider using asymmetric algorithms (e.g., RS256) for better key separation between issuer and verifier.'])
         ]
     }
-    endpoint_result : EndpointValidationResult =  EndpointValidationResult(
-        endpoint_url= url,
+    endpoint_result : EndpointValidationResult = EndpointValidationResult(
+        endpoint_url= secured_endpoint_url,
         token= valid_token,
         response= "Internal Server Error",
         response_json= None,
-        status_code=500
+        status_code=500,
+        findings=[
+            Finding(
+                title='Endpoint returned server error',
+                severity= Severity.MEDIUM,
+                description='The endpoint returned HTTP 500. This may indicate weak input validation or unhandled exceptions.',
+                recommendations=['Handle invalid or malformed tokens safely and return controlled 4xx responses instead of 5xx errors.'])],
+        errors=['Endpoint returned a non-200 status code: 500',
+                'Endpoint returned a server error status '
+                'code: 500'],
+        warnings=['Endpoint response is not valid JSON.']
     )
 
     actual = analyse_results(token_result, endpoint_result)
