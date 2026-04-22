@@ -2,7 +2,7 @@
 from .validators.parser_validator import validate_arguments # Import the function to validate command line arguments
 from .test_api import run_local_api_server, stop_api_server # Import the function to run the local API server
 from checker.src.analyser.jwt import token_loader, token_analyser # Import the token loader module to handle token loading from string, file, or URL
-from checker.src.analyser.analyser import analyse_results
+from checker.src.analyser.aggregator import analyse_results
 from checker.src.analyser.final_analysis_result import FinalAnalysisResult # for defining the structure of the analysis result for system
 from checker.src.analyser.jwt.token_analysis_result import TokenAnalysisResult # for defining the structure of the analysis result for jwt
 from checker.src.analyser.endpoint.endpoint_validation_result import EndpointValidationResult # for defining the structure of the endpoint analysis
@@ -50,7 +50,7 @@ def main():
         token_analysis_result = token_analyser.analyse_token(token, int(datetime.now(timezone.utc).timestamp()))
         print("Token analysis completed.")
 
-    if args.endpoint:
+    if args.endpoint and token_analysis_result is not None:
         print("Testing endpoint...")
         # We need to test the endpoint with the JWT token that we loaded.
         # The endpoint should be provided as a URL, for example: http://localhost:5000/api/profile.
@@ -59,7 +59,7 @@ def main():
         # The report will contain the results of:
         # - JWT token validation: Information about the validity of the token, its structure, and claims.
         # - Endpoint testing: Information about the accessibility of the endpoint, the response status code.
-        endpoint_analysis_result = analyse_endpoint(args.endpoint, token)
+        endpoint_analysis_result = analyse_endpoint(args.endpoint, token_analysis_result)
         print("Endpoint analysis completed.")
 
     if token_analysis_result is not None:
