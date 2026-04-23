@@ -47,12 +47,6 @@ def build_cli():
         help="Stop local API"
     )
 
-    parser.add_argument(
-        "-v", "--verbose",
-        action="store_true",
-        help="Enable verbose output for debugging purposes"
-    )
-
     ## Checker arguments
     # This sections arguments are related to the JWT token input.
     parser.add_argument(

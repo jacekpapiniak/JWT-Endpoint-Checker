@@ -19,7 +19,6 @@ def is_file_path(value: str) -> bool:
 def get_token_type(token_value: str) -> str:
     # Check if the token value is a valid URL
     if is_url(token_value):
-        print(f"The token value looks like a URL: {token_value}")
         return "url"
 
     # Check if the token value is a valid file path
