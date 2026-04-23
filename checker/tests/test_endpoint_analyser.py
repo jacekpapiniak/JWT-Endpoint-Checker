@@ -237,7 +237,8 @@ def test_analyse_endpoint_when_endpoint_result_is_some_and_expired_jwt_accepted_
             Finding(
                 title='Symmetric JWT Algorithm Detected',
                 severity=Severity.LOW,
-                description='The token is using a symmetric signing algorithm (hs256). This requires secure management of the shared secret, as compromise of the secret allows full token forgery.',
+                description='The token is using a symmetric signing algorithm (hs256). '
+                            'This requires secure management of the shared secret, as compromise of the secret allows full token forgery.',
                 recommendations=[
                     'Ensure strong secret key management and consider using asymmetric algorithms (e.g., RS256) for better key separation between issuer and verifier.']),
             Finding(
@@ -298,7 +299,8 @@ def test_analyse_endpoint_when_endpoint_result_is_some_and_no_sub_set_in_jwt_acc
          Finding(
              title='Symmetric JWT Algorithm Detected',
              severity=Severity.LOW,
-             description='The token is using a symmetric signing algorithm (hs256). This requires secure management of the shared secret, as compromise of the secret allows full token forgery.',
+             description='The token is using a symmetric signing algorithm (hs256). '
+                         'This requires secure management of the shared secret, as compromise of the secret allows full token forgery.',
              recommendations=[
                  'Ensure strong secret key management and consider using asymmetric algorithms (e.g., RS256) for better key separation between issuer and verifier.']),
 
@@ -361,7 +363,8 @@ def test_analyse_endpoint_when_endpoint_result_is_some_and_empty_sub_set_in_jwt_
             Finding(
                 title='Symmetric JWT Algorithm Detected',
                 severity=Severity.LOW,
-                description='The token is using a symmetric signing algorithm (hs256). This requires secure management of the shared secret, as compromise of the secret allows full token forgery.',
+                description='The token is using a symmetric signing algorithm (hs256). '
+                            'This requires secure management of the shared secret, as compromise of the secret allows full token forgery.',
                 recommendations=['Ensure strong secret key management and consider using asymmetric algorithms (e.g., RS256) for better key separation between issuer and verifier.']),
 
             Finding(
@@ -422,7 +425,8 @@ def test_analyse_endpoint_endpoint_result_is_server_side_error_500_returned_by_e
             Finding(
                 title='Symmetric JWT Algorithm Detected',
                 severity= Severity.LOW,
-                description='The token is using a symmetric signing algorithm (hs256). This requires secure management of the shared secret, as compromise of the secret allows full token forgery.',
+                description='The token is using a symmetric signing algorithm (hs256). '
+                            'This requires secure management of the shared secret, as compromise of the secret allows full token forgery.',
                 recommendations=['Ensure strong secret key management and consider using asymmetric algorithms (e.g., RS256) for better key separation between issuer and verifier.'])
         ]
     }
