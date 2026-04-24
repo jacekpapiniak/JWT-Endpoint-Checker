@@ -36,7 +36,7 @@ def main():
     token_analysis_result : TokenAnalysisResult = None
     endpoint_analysis_result : EndpointValidationResult = None
 
-    if args.token:
+    if args.token is not None:
         print("Loading token...")
         # The credentials are in format "email,password".
         # Therefore we can use split(",") to get the email and password as separate values.
@@ -45,7 +45,8 @@ def main():
         else:
             email, password = None, None
 
-        token = token_loader.load_token(args.token, email, password)
+        token = "" if args.token in (None,"") else token_loader.load_token(args.token, email, password)
+
         print(f"Token loaded successfully: {token}")
         token_analysis_result = token_analyser.analyse_token(token, int(datetime.now(timezone.utc).timestamp()))
         print("Token analysis completed.")
