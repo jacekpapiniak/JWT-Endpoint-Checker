@@ -42,3 +42,70 @@ No text or data will be printed in the command line window, but it is required t
 # Unit Tests
 This project includes unit tests for python code. To run the tests, navigate to the `checker/tests/` directory 
 and execute the following command: `pytest -v`
+
+# Mermaid Diagrams
+
+## Simplified Token-Only Flow
+```mermaid
+flowchart TD
+    U[User Input] --> PV[parser_validator]
+    PV --> TL[token_loader]
+    TL --> TA[token_analyser]
+    TA --> AG[aggregator]
+    AG --> RW[report_writer]
+    RW --> O[Console / TXT Report]
+```
+
+## Full Analysis Execution Scenario
+```mermaid 
+sequenceDiagram
+    participant User
+    participant CLI as Python CLI / main.py
+    participant Login as .NET API /login
+    participant Profile as .NET API /profile
+    participant Report as Report Writer
+
+    User->>CLI: Provide token source / login endpoint / credentials / endpoint
+    CLI->>Login: POST /login with credentials
+    Login-->>CLI: Return JWT or test value
+    CLI->>CLI: Load and analyse token
+    CLI->>Profile: Send request with token
+    Profile-->>CLI: Return HTTP response
+    CLI->>CLI: Aggregate token and endpoint results
+    CLI->>Report: Build final report
+    Report-->>User: Console output / TXT report
+```
+## JWT Analysis and Conditional Endpoint Validation Data Flow
+```mermaid
+flowchart TD
+    A[User Input] --> B[Token Extraction / Loading]
+    B --> C[JSON Web Token Analysis]
+    C --> D{Protected Endpoint Provided?}
+    D -- Yes --> E[Endpoint Validation]
+    D -- No --> F[Skip Endpoint Validation]
+    E --> G[Results Aggregation]
+    F --> G
+    G --> H[Output Writer]
+    H --> I[Console / TXT Report]
+```
+
+## High-level Component Architecture
+```mermaid
+flowchart TD
+    U[User Input] --> M[main.py]
+    M --> PV[parser_validator]
+
+    PV --> TL[token_loader]
+    TL --> TA[token_analyser]
+
+    PV --> EA[endpoint_analyser]
+
+    TA --> AG[aggregator]
+    EA --> AG
+
+    AG --> RW[report_writer]
+    RW --> O[Console / TXT Report]
+
+    TL -. login source .-> L[.NET Test API /login]
+    EA -. protected endpoint test .-> P[.NET Test API /profile]
+```
