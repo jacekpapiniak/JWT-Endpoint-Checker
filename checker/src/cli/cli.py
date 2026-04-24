@@ -50,8 +50,11 @@ def build_cli():
     ## Checker arguments
     # This sections arguments are related to the JWT token input.
     parser.add_argument(
-        "-t", "--token",
-        type=str,
+        "-t", "--token", # short and long CLI flag
+        type=str, # input is parsed as string
+        nargs="?", # optional argument to allow for passing and testing empty JSON Web Token
+        const="", # value used when -t provided without value
+        default=None, # when flag is not provided at all
         help='''\
         This argument declares the source of the JWT token to be checked. It can be provided in three ways:
         1. As a string: Provide the JWT token directly in the command line

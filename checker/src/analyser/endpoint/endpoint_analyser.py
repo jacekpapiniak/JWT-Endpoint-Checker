@@ -20,10 +20,27 @@ def analyse_endpoint(endpoint_url: str, token_result : TokenAnalysisResult,) -> 
     # structure of the token and the claims it contains.
     result = EndpointValidationResult(
         endpoint_url=endpoint_url,
-        token=token if token else "",
+        token= token if token else "",
     )
 
     result = record_endpoint_behaviour(endpoint_url, token, result)
+
+    # Check if empty JWT was successfully accepted by endpoint
+    print(f"token {token_result["token"]}, is valid {token_result["is_valid_format"]}")
+    if token_result["token"] == "" and result.status_code == 200:
+        result.findings.append(Finding(
+            title="Endpoint accepted malformed token.",
+            description=(
+                f"The endpoint {result.endpoint_url} returned HTTP 200 (OK)"
+                "for a request with an EMPTY JSON Web Token."
+            ),
+            severity=Severity.CRITICAL,
+            recommendations=[
+                "Reject empty tokens with HTTP 401 Unauthorized."
+                "Ensure that JWT toke structure is validated by the endpoint before processing authorization."
+                "Validate JSON Web Token structure and signature before processing requests."
+            ]
+        ))
 
     # Check if malformed jwt token was successfully accepted by endpoint
     if token_result["is_valid_format"] is False and result.status_code == 200:

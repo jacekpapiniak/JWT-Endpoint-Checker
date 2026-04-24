@@ -40,7 +40,8 @@ def validate_arguments(parser, args) -> None:
   # vars(args) returns a dictionary of the arguments and their values.
   # values() returns a view of the values in the dictionary.
   # any() checks if there is at least one value -> Eq. C# Any() method.
-  if args is None or (not any(vars(args).values())):
+  # Because we want to be able to test "" we did an exception for token with and args.token != ""
+  if args is None or (not any(vars(args).values()) and args.token != ""):
      parser.error('''\
      
      No arguments provided. 
@@ -72,8 +73,8 @@ def validate_arguments(parser, args) -> None:
          Example: checker -t \"http://localhost:5000/api/login\" -c \"email,password\" -w \"path\\report.txt\"
          ''')
 
-  # 3. If API endpoint is provided, token must be provided.
-  if args.endpoint and not args.token:
+  # 3. If API endpoint is provided, token must be provided even if it is an empty value.
+  if args.endpoint and args.token is None:
      parser.error('''\
      
          The -e/--endpoint argument requires the -t/--token argument to specify the JWT token for accessing the endpoint.

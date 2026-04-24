@@ -157,6 +157,65 @@ def test_record_endpoint_behaviour_empty_token():
     assert actual == expected
 
 @responses.activate
+def test_analyse_endpoint_when_endpoint_result_is_some_and_empty_jwt_accepted_by_endpoint_return_expected():
+    token_result : TokenAnalysisResult = {
+        "token": "",
+        "is_valid_format": False,
+        "segment_count": 0,
+        "header": None,
+        "payload": None,
+        "signature": None,
+        "alg" : None,
+        "sub" : None,
+        "exp" : None,
+        "is_expired": None,
+        "errors": [],
+        "findings" : [
+            Finding(
+                title='Invalid token format.',
+                severity= Severity.HIGH,
+                description = "Invalid token format. A JWT token must consist of three segments separated by dots. Found 0 segments.",
+                recommendations = ["Use valid JWT token in valid format header.payload.signature according with RFC 7519 (JSON Web Token)."])
+        ]
+    }
+
+    # Mock the response from the endpoint to return a successful response with a JSON body.
+    responses.add(
+        responses.POST,
+        test_endpoint_url,
+        json= successful_json_response,
+        status=200)
+
+    actual = analyse_endpoint(test_endpoint_url, token_result)
+
+    assert actual == EndpointValidationResult(
+        endpoint_url=test_endpoint_url,
+        token= "",
+        response=json.dumps(successful_json_response),
+        response_json= successful_json_response,
+        status_code=200,
+        errors=[],
+        warnings=[],
+        findings=[
+            Finding(
+                title='Endpoint accepted malformed token.',
+                severity= Severity.CRITICAL,
+                description='The endpoint http://localhost:5000/api/profile returned HTTP 200 (OK)for a request with an EMPTY JSON Web Token.',
+                recommendations=['Reject empty tokens with HTTP 401 Unauthorized.Ensure that JWT toke structure is validated by the endpoint before processing authorization.Validate JSON Web Token structure and signature before processing requests.']),
+
+            Finding(
+                title='Endpoint accepted malformed token.',
+                severity= Severity.CRITICAL,
+                description='The endpoint http://localhost:5000/api/profile returned HTTP 200 (OK)with JWT token with invalid format.',
+                recommendations=['Ensure that JWT toke structure is validated by the endpoint before processing authorization.']),
+
+            Finding(
+                title='Endpoint accepted token with missing subject claim.',
+                severity= Severity.HIGH,
+                description='The endpoint http://localhost:5000/api/profile returned HTTP 200 (OK)with missing subject claim in JWT token.',
+                recommendations=["Require identity-related claims such as 'sub' before authorizing requests."])])
+
+@responses.activate
 def test_analyse_endpoint_when_endpoint_result_is_some_and_malformed_jwt_accepted_by_endpoint_return_expected():
     token = "Not even a jwt"
     token_result : TokenAnalysisResult = {
